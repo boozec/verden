@@ -1,0 +1,22 @@
+[package]
+name = "m6-ie-2022"
+version = "0.1.0"
+edition = "2021"
+authors = ["Santo Cariotti <santo@dcariotti.me>"]
+
+[dependencies]
+async-trait = "0.1"
+axum = { version = "0.5.15", features = ["headers"] }
+http-body = "0.4.3"
+jsonwebtoken = "8.1"
+once_cell = "1.13"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.20", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tower-http = { version = "0.3.4", features = ["trace", "compression-br", "propagate-header", "sensitive-headers"] }
+sqlx = { version = "0.6", features = [ "runtime-tokio-rustls", "postgres" ] }
+sha256 = "1.0.3"
+validator = { version = "0.16.0", features = ["derive"] }
+chrono = "0.4"
