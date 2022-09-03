@@ -7,8 +7,6 @@ use serde_json::json;
 
 /// All errors raised by the web app
 pub enum AppError {
-    /// Generic error, never called yet
-    Generic,
     /// Database error
     Database,
     /// Generic bad request. It is handled with a message value
@@ -30,10 +28,6 @@ impl IntoResponse for AppError {
     /// ```
     fn into_response(self) -> Response {
         let (status, error_message) = match self {
-            AppError::Generic => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Generic error, can't find why".to_string(),
-            ),
             AppError::Database => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Error with database connection".to_string(),
