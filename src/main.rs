@@ -18,7 +18,7 @@ use tracing::Span;
 async fn main() {
     let app = create_app().await;
 
-    /// By default the server is bind at "127.0.0.1:3000"
+    // By default the server is bind at "127.0.0.1:3000"
     let addr = std::env::var("ALLOWED_HOST").unwrap_or_else(|_| "127.0.0.1:3000".to_string());
     tracing::info!("Listening on {}", addr);
 

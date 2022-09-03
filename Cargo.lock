@@ -713,27 +713,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "verden"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "axum",
- "chrono",
- "http-body",
- "jsonwebtoken",
- "once_cell",
- "serde",
- "serde_json",
- "sha256",
- "sqlx",
- "tokio",
- "tower-http",
- "tracing",
- "tracing-subscriber",
- "validator",
-]
-
-[[package]]
 name = "matchers"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1788,6 +1767,27 @@ name = "valuable"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "830b7e5d4d90034032940e4ace0d9a9a057e7a45cd94e6c007832e39edb82f6d"
+
+[[package]]
+name = "verden"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "axum",
+ "chrono",
+ "http-body",
+ "jsonwebtoken",
+ "once_cell",
+ "serde",
+ "serde_json",
+ "sha256",
+ "sqlx",
+ "tokio",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "validator",
+]
 
 [[package]]
 name = "version_check"

@@ -24,7 +24,7 @@ async fn create_user(
     Json(payload): Json<UserCreate>,
     _: Claims,
 ) -> Result<Json<UserList>, AppError> {
-    let user = User::new(payload.email, payload.password);
+    let user = User::new(payload.email, payload.username, payload.password);
     let user_new = User::create(user).await?;
 
     Ok(Json(user_new))
@@ -34,6 +34,6 @@ async fn create_user(
 async fn get_user(Path(user_id): Path<i32>, _: Claims) -> Result<Json<UserList>, AppError> {
     match User::find_by_id(user_id).await {
         Ok(user) => Ok(Json(user)),
-        Err(_) => Err(AppError::NotFound),
+        Err(_) => Err(AppError::NotFound("User not found".to_string())),
     }
 }

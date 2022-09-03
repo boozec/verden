@@ -32,6 +32,13 @@ pub struct AuthBody {
     token_type: String,
 }
 
+/// Payload used for user creation
+#[derive(Deserialize)]
+pub struct LoginCredentials {
+    pub username: String,
+    pub password: String,
+}
+
 static KEYS: Lazy<Keys> = Lazy::new(|| {
     let secret = std::env::var("JWT_SECRET").expect("JWT_SECRET must be set");
     Keys::new(secret.as_bytes())

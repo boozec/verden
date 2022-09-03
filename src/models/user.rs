@@ -8,8 +8,10 @@ use validator::Validate;
 #[derive(Deserialize, Serialize, Validate)]
 pub struct User {
     id: i32,
-    #[validate(length(min = 1, message = "Can not be empty"))]
+    #[validate(length(min = 4, message = "Can not be empty"))]
     email: String,
+    #[validate(length(min = 2, message = "Can not be empty"))]
+    username: String,
     #[validate(length(min = 8, message = "Must be min 8 chars length"))]
     password: String,
     is_staff: Option<bool>,
@@ -21,6 +23,7 @@ pub struct UserList {
     // It is public because it used by `Claims` creation
     pub id: i32,
     email: String,
+    username: String,
     is_staff: Option<bool>,
 }
 
@@ -28,15 +31,17 @@ pub struct UserList {
 #[derive(Deserialize)]
 pub struct UserCreate {
     pub email: String,
+    pub username: String,
     pub password: String,
 }
 
 impl User {
     /// By default an user has id = 0. It is not created yet
-    pub fn new(email: String, password: String) -> Self {
+    pub fn new(email: String, username: String, password: String) -> Self {
         Self {
             id: 0,
             email,
+            username,
             password,
             is_staff: Some(false),
         }
@@ -54,11 +59,12 @@ impl User {
         let rec = sqlx::query_as!(
             UserList,
             r#"
-                INSERT INTO users (email, password)
-                VALUES ( $1, $2 )
-                RETURNING id, email, is_staff
+                INSERT INTO users (email, username, password)
+                VALUES ( $1, $2, $3)
+                RETURNING id, email, username, is_staff
             "#,
             user.email,
+            user.username,
             crypted_password
         )
         .fetch_one(pool)
@@ -76,10 +82,10 @@ impl User {
         let rec = sqlx::query_as!(
             UserList,
             r#"
-                SELECT id, email, is_staff FROM "users"
-                WHERE email = $1 AND password = $2
+                SELECT id, email, username, is_staff FROM "users"
+                WHERE username = $1 AND password = $2
             "#,
-            user.email,
+            user.username,
             crypted_password
         )
         .fetch_one(pool)
@@ -95,7 +101,7 @@ impl User {
         let rec = sqlx::query_as!(
             UserList,
             r#"
-                SELECT id, email, is_staff FROM "users"
+                SELECT id, email, username, is_staff FROM "users"
                 WHERE id = $1
             "#,
             user_id
@@ -109,9 +115,12 @@ impl User {
     /// List all users
     pub async fn list() -> Result<Vec<UserList>, AppError> {
         let pool = unsafe { get_client() };
-        let rows = sqlx::query_as!(UserList, r#"SELECT id, email, is_staff FROM users"#)
-            .fetch_all(pool)
-            .await?;
+        let rows = sqlx::query_as!(
+            UserList,
+            r#"SELECT id, email, username, is_staff FROM users"#
+        )
+        .fetch_all(pool)
+        .await?;
 
         Ok(rows)
     }
