@@ -12,7 +12,7 @@ pub enum AppError {
     /// Generic bad request. It is handled with a message value
     BadRequest(String),
     /// Not found error
-    NotFound,
+    NotFound(String),
     /// Raised when a token is not good created
     TokenCreation,
     /// Raised when a passed token is not valid
@@ -33,7 +33,7 @@ impl IntoResponse for AppError {
                 "Error with database connection".to_string(),
             ),
             AppError::BadRequest(value) => (StatusCode::BAD_REQUEST, value),
-            AppError::NotFound => (StatusCode::NOT_FOUND, "Element not found".to_string()),
+            AppError::NotFound(value) => (StatusCode::NOT_FOUND, value),
             AppError::TokenCreation => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Token creation error".to_string(),
