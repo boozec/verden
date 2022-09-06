@@ -18,7 +18,7 @@ struct Keys {
 #[derive(Serialize, Deserialize)]
 pub struct Claims {
     /// ID from the user model
-    user_id: i32,
+    pub user_id: i32,
     /// Expiration timestamp
     exp: usize,
 }

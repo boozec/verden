@@ -35,7 +35,8 @@ async fn create_app() -> Router {
 
     let api_routes = Router::new()
         .nest("/users", routes::user::create_route())
-        .nest("/auth", routes::auth::create_route());
+        .nest("/auth", routes::auth::create_route())
+        .nest("/models", routes::model::create_route());
 
     Router::new()
         // Map all routes to `/v1/*` namespace
