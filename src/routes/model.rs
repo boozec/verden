@@ -1,7 +1,7 @@
 use crate::errors::AppError;
 use crate::models::{
     auth::Claims,
-    model::{Model, ModelCreate},
+    model::{Model, ModelCreate, ModelUser},
 };
 use axum::{routing::get, Json, Router};
 
@@ -11,7 +11,7 @@ pub fn create_route() -> Router {
 }
 
 /// List models.
-async fn list_models() -> Result<Json<Vec<Model>>, AppError> {
+async fn list_models() -> Result<Json<Vec<ModelUser>>, AppError> {
     let models = Model::list().await?;
 
     Ok(Json(models))

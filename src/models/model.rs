@@ -1,5 +1,6 @@
 use crate::db::get_client;
 use crate::errors::AppError;
+use sqlx::types::JsonValue;
 
 use chrono::{Local, NaiveDateTime};
 use serde::{Deserialize, Serialize};
@@ -32,6 +33,22 @@ pub struct ModelCreate {
     pub weight: i32,
     pub printer: Option<String>,
     pub material: Option<String>,
+}
+
+#[derive(Serialize)]
+pub struct ModelUser {
+    id: i32,
+    name: String,
+    description: Option<String>,
+    duration: i32,
+    height: i32,
+    weight: i32,
+    printer: Option<String>,
+    material: Option<String>,
+    author_id: i32,
+    created: NaiveDateTime,
+    updated: NaiveDateTime,
+    author: Option<JsonValue>,
 }
 
 impl Model {
@@ -94,11 +111,17 @@ impl Model {
     }
 
     /// List all models
-    pub async fn list() -> Result<Vec<Model>, AppError> {
+    pub async fn list() -> Result<Vec<ModelUser>, AppError> {
         let pool = unsafe { get_client() };
-        let rows = sqlx::query_as!(Model, r#"SELECT * FROM models"#)
-            .fetch_all(pool)
-            .await?;
+        let rows = sqlx::query_as!(
+            ModelUser,
+            r#"SELECT
+            models.*,
+            json_build_object('id', users.id, 'email', users.email, 'username', users.username, 'is_staff', users.is_staff) as author
+            FROM models JOIN users ON users.id = models.author_id"#
+        )
+        .fetch_all(pool)
+        .await?;
 
         Ok(rows)
     }

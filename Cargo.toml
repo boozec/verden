@@ -16,7 +16,7 @@ tokio = { version = "1.20", features = ["full"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tower-http = { version = "0.3.4", features = ["trace", "compression-br", "propagate-header", "sensitive-headers"] }
-sqlx = { version = "0.6", features = [ "runtime-tokio-rustls", "postgres", "chrono" ] }
+sqlx = { version = "0.6", features = [ "runtime-tokio-rustls", "postgres", "chrono", "json" ] }
 sha256 = "1.0.3"
 validator = { version = "0.16.0", features = ["derive"] }
 chrono = { version = "0.4", features = ["serde"] }
