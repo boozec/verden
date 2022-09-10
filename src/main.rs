@@ -7,6 +7,7 @@ mod pagination;
 mod routes;
 
 use axum::{
+    handler::Handler,
     http::{header, Request},
     Router,
 };
@@ -43,6 +44,7 @@ async fn create_app() -> Router {
     Router::new()
         // Map all routes to `/v1/*` namespace
         .nest("/v1", api_routes)
+        .fallback(crate::routes::page_404.into_service())
         // Mark the `Authorization` request header as sensitive so it doesn't
         // show in logs.
         .layer(SetSensitiveHeadersLayer::new(std::iter::once(
