@@ -77,8 +77,6 @@ async fn upload_model_file(
         Ok(saved_file) => {
             return Ok(format!("Uploaded {}", saved_file));
         }
-        Err(e) => {
-            return Err(e);
-        }
+        Err(e) => Err(e),
     }
 }

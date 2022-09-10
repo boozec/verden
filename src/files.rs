@@ -14,10 +14,7 @@ pub async fn upload(
     if let Some(file) = multipart.next_field().await.unwrap() {
         let content_type = file.content_type().unwrap().to_string();
 
-        let index = content_type
-            .find("/")
-            .map(|i| i)
-            .unwrap_or(usize::max_value());
+        let index = content_type.find('/').unwrap_or(usize::max_value());
         let mut ext_name = "xxx";
         if index != usize::max_value() {
             ext_name = &content_type[index + 1..];
@@ -25,8 +22,7 @@ pub async fn upload(
 
         if allowed_extensions
             .iter()
-            .position(|&x| x.to_lowercase() == ext_name)
-            .is_some()
+            .any(|&x| x.to_lowercase() == ext_name)
         {
             let rnd = (random::<f32>() * 1000000000 as f32) as i32;
 
@@ -40,7 +36,7 @@ pub async fn upload(
         }
     }
 
-    if save_filename != "" {
+    if !save_filename.is_empty() {
         return Ok(save_filename);
     }
 
