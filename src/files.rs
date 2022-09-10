@@ -40,5 +40,11 @@ pub async fn upload(
         }
     }
 
-    Ok(save_filename)
+    if save_filename != "" {
+        return Ok(save_filename);
+    }
+
+    Err(AppError::BadRequest(
+        "File extension not supported".to_string(),
+    ))
 }
