@@ -17,6 +17,8 @@ pub enum AppError {
     TokenCreation,
     /// Raised when a passed token is not valid
     InvalidToken,
+    /// Raised if an user wants to do something can't do
+    Unauthorized,
 }
 
 /// Use `AppError` as response for an endpoint
@@ -39,6 +41,10 @@ impl IntoResponse for AppError {
                 "Token creation error".to_string(),
             ),
             AppError::InvalidToken => (StatusCode::BAD_REQUEST, "Invalid token".to_string()),
+            AppError::Unauthorized => (
+                StatusCode::UNAUTHORIZED,
+                "Can't perform this action".to_string(),
+            ),
         };
 
         let body = Json(json!({
