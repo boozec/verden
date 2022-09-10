@@ -1,15 +1,23 @@
+use crate::config::MAX_UPLOAD_FILE_SIZE;
 use crate::errors::AppError;
+use crate::files::upload;
 use crate::models::{
     auth::Claims,
     model::{Model, ModelCreate, ModelUser},
 };
 use crate::pagination::Pagination;
-use axum::{extract::Query, routing::get, Json, Router};
+use axum::{
+    extract::{ContentLengthLimit, Multipart, Path, Query},
+    routing::{get, post},
+    Json, Router,
+};
 use serde::Serialize;
 
 /// Create routes for `/v1/models/` namespace
 pub fn create_route() -> Router {
-    Router::new().route("/", get(list_models).post(create_model))
+    Router::new()
+        .route("/", get(list_models).post(create_model))
+        .route("/:id/upload", post(upload_model_file))
 }
 
 #[derive(Serialize)]
@@ -46,4 +54,31 @@ async fn create_model(
     let model_new = Model::create(model).await?;
 
     Ok(Json(model_new))
+}
+
+/// Upload a file for a model
+async fn upload_model_file(
+    claims: Claims,
+    Path(model_id): Path<i32>,
+    ContentLengthLimit(multipart): ContentLengthLimit<Multipart, { MAX_UPLOAD_FILE_SIZE }>,
+) -> Result<String, AppError> {
+    let model = match Model::find_by_id(model_id).await {
+        Ok(model) => model,
+        Err(_) => {
+            return Err(AppError::NotFound("Model not found".to_string()));
+        }
+    };
+
+    if model.author_id() != claims.user_id {
+        return Err(AppError::Unauthorized);
+    }
+
+    match upload(multipart, vec!["stl"]).await {
+        Ok(saved_file) => {
+            return Ok(format!("Uploaded {}", saved_file));
+        }
+        Err(e) => {
+            return Err(e);
+        }
+    }
 }
