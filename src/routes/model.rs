@@ -3,18 +3,28 @@ use crate::models::{
     auth::Claims,
     model::{Model, ModelCreate, ModelUser},
 };
-use axum::{routing::get, Json, Router};
+use crate::pagination::Pagination;
+use axum::{extract::Query, routing::get, Json, Router};
+use serde::Serialize;
 
 /// Create routes for `/v1/models/` namespace
 pub fn create_route() -> Router {
     Router::new().route("/", get(list_models).post(create_model))
 }
 
-/// List models.
-async fn list_models() -> Result<Json<Vec<ModelUser>>, AppError> {
-    let models = Model::list().await?;
+#[derive(Serialize)]
+struct ModelPagination {
+    count: i64,
+    results: Vec<ModelUser>,
+}
 
-    Ok(Json(models))
+/// List models.
+async fn list_models(pagination: Query<Pagination>) -> Result<Json<ModelPagination>, AppError> {
+    let page = pagination.0.page.unwrap_or_default();
+    let results = Model::list(page).await?;
+    let count = Model::count().await?;
+
+    Ok(Json(ModelPagination { count, results }))
 }
 
 /// Create a model. Checks Authorization token

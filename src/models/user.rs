@@ -1,3 +1,4 @@
+use crate::config::PAGE_LIMIT;
 use crate::db::get_client;
 use crate::errors::AppError;
 
@@ -113,15 +114,29 @@ impl User {
     }
 
     /// List all users
-    pub async fn list() -> Result<Vec<UserList>, AppError> {
+    pub async fn list(page: i64) -> Result<Vec<UserList>, AppError> {
         let pool = unsafe { get_client() };
         let rows = sqlx::query_as!(
             UserList,
-            r#"SELECT id, email, username, is_staff FROM users"#
+            r#"SELECT id, email, username, is_staff FROM users
+            LIMIT $1 OFFSET $2
+            "#,
+            PAGE_LIMIT,
+            PAGE_LIMIT * page
         )
         .fetch_all(pool)
         .await?;
 
         Ok(rows)
+    }
+
+    /// Return the number of users.
+    pub async fn count() -> Result<i64, AppError> {
+        let pool = unsafe { get_client() };
+        let row = sqlx::query!(r#"SELECT COUNT(id) as count FROM users"#)
+            .fetch_one(pool)
+            .await?;
+
+        Ok(row.count.unwrap())
     }
 }

@@ -3,7 +3,13 @@ use crate::models::{
     auth::Claims,
     user::{User, UserCreate, UserList},
 };
-use axum::{extract::Path, routing::get, Json, Router};
+use crate::pagination::Pagination;
+use axum::{
+    extract::{Path, Query},
+    routing::get,
+    Json, Router,
+};
+use serde::Serialize;
 
 /// Create routes for `/v1/users/` namespace
 pub fn create_route() -> Router {
@@ -12,11 +18,22 @@ pub fn create_route() -> Router {
         .route("/:id", get(get_user))
 }
 
-/// List users. Checks Authorization token
-async fn list_users(_: Claims) -> Result<Json<Vec<UserList>>, AppError> {
-    let users = User::list().await?;
+#[derive(Serialize)]
+struct UserPagination {
+    count: i64,
+    results: Vec<UserList>,
+}
 
-    Ok(Json(users))
+/// List users. Checks Authorization token
+async fn list_users(
+    _: Claims,
+    pagination: Query<Pagination>,
+) -> Result<Json<UserPagination>, AppError> {
+    let page = pagination.0.page.unwrap_or_default();
+    let results = User::list(page).await?;
+    let count = User::count().await?;
+
+    Ok(Json(UserPagination { count, results }))
 }
 
 /// Create an user. Checks Authorization token

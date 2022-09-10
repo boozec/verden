@@ -1,4 +1,6 @@
+use crate::config::PAGE_LIMIT;
 use crate::db::get_client;
+
 use crate::errors::AppError;
 use sqlx::types::JsonValue;
 
@@ -111,18 +113,32 @@ impl Model {
     }
 
     /// List all models
-    pub async fn list() -> Result<Vec<ModelUser>, AppError> {
+    pub async fn list(page: i64) -> Result<Vec<ModelUser>, AppError> {
         let pool = unsafe { get_client() };
         let rows = sqlx::query_as!(
             ModelUser,
             r#"SELECT
             models.*,
             json_build_object('id', users.id, 'email', users.email, 'username', users.username, 'is_staff', users.is_staff) as author
-            FROM models JOIN users ON users.id = models.author_id"#
+            FROM models JOIN users ON users.id = models.author_id
+            LIMIT $1 OFFSET $2
+            "#,
+            PAGE_LIMIT,
+            PAGE_LIMIT * page
         )
         .fetch_all(pool)
         .await?;
 
         Ok(rows)
+    }
+
+    /// Return the number of models.
+    pub async fn count() -> Result<i64, AppError> {
+        let pool = unsafe { get_client() };
+        let row = sqlx::query!(r#"SELECT COUNT(id) as count FROM models"#)
+            .fetch_one(pool)
+            .await?;
+
+        Ok(row.count.unwrap())
     }
 }

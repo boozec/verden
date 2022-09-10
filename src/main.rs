@@ -1,7 +1,9 @@
+mod config;
 mod db;
 mod errors;
 mod logger;
 mod models;
+mod pagination;
 mod routes;
 
 use axum::{
