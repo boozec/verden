@@ -2,6 +2,7 @@ use crate::config::PAGE_LIMIT;
 use crate::db::get_client;
 
 use crate::errors::AppError;
+use serde_json::json;
 use sqlx::types::JsonValue;
 
 use chrono::{Local, NaiveDateTime};
@@ -112,6 +113,27 @@ impl Model {
         Ok(rec)
     }
 
+    /// Returns the model with id = `model_id`
+    pub async fn find_by_id(model_id: i32) -> Result<ModelUser, AppError> {
+        let pool = unsafe { get_client() };
+
+        let rec = sqlx::query_as!(
+            ModelUser,
+            r#"
+                SELECT
+                    models.*,
+                    json_build_object('id', users.id, 'email', users.email, 'username', users.username, 'is_staff', users.is_staff) as author
+                FROM models JOIN users ON users.id = models.author_id
+                WHERE models.id = $1
+            "#,
+            model_id
+        )
+        .fetch_one(pool)
+        .await?;
+
+        Ok(rec)
+    }
+
     /// List all models
     pub async fn list(page: i64) -> Result<Vec<ModelUser>, AppError> {
         let pool = unsafe { get_client() };
@@ -140,5 +162,14 @@ impl Model {
             .await?;
 
         Ok(row.count.unwrap())
+    }
+}
+
+impl ModelUser {
+    pub fn author_id(&self) -> JsonValue {
+        match &self.author {
+            Some(json) => json.get("id").unwrap().clone(),
+            None => json!(0),
+        }
     }
 }
