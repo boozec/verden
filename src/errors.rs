@@ -55,3 +55,10 @@ impl From<sqlx::Error> for AppError {
         AppError::Database
     }
 }
+
+/// Raise a generic error from a string
+impl From<std::string::String> for AppError {
+    fn from(error: std::string::String) -> AppError {
+        AppError::BadRequest(error)
+    }
+}

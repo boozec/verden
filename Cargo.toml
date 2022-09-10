@@ -6,7 +6,7 @@ authors = ["Santo Cariotti <santo@dcariotti.me>"]
 
 [dependencies]
 async-trait = "0.1"
-axum = { version = "0.5.15", features = ["headers"] }
+axum = { version = "0.5.15", features = ["headers", "multipart"] }
 http-body = "0.4.3"
 jsonwebtoken = "8.1"
 once_cell = "1.13"
@@ -20,3 +20,4 @@ sqlx = { version = "0.6", features = [ "runtime-tokio-rustls", "postgres", "chro
 sha256 = "1.0.3"
 validator = { version = "0.16.0", features = ["derive"] }
 chrono = { version = "0.4", features = ["serde"] }
+rand = "0.8.5"
