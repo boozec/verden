@@ -101,6 +101,12 @@ where
         let token_data = decode::<Claims>(bearer.token(), &KEYS.decoding, &Validation::default())
             .map_err(|_| AppError::InvalidToken)?;
 
+        let now = Local::now().timestamp() as usize;
+
+        if token_data.claims.exp < now {
+            return Err(AppError::InvalidToken);
+        }
+
         Ok(token_data.claims)
     }
 }
