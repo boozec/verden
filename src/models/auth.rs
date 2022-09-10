@@ -56,7 +56,7 @@ impl Keys {
 impl Claims {
     /// Create a new Claim using the `user_id` and the current timestamp + 2 days
     pub fn new(user_id: i32) -> Self {
-        let expiration = Local::now() + Duration::days(2);
+        let expiration = Local::now() + Duration::days(1);
 
         Self {
             user_id,
