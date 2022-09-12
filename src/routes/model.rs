@@ -17,6 +17,7 @@ use serde::Serialize;
 pub fn create_route() -> Router {
     Router::new()
         .route("/", get(list_models).post(create_model))
+        .route("/:id", get(get_model))
         .route("/:id/upload", post(upload_model_file))
 }
 
@@ -54,6 +55,14 @@ async fn create_model(
     let model_new = Model::create(model).await?;
 
     Ok(Json(model_new))
+}
+
+/// Get a model with id = `model_id`
+async fn get_model(Path(model_id): Path<i32>) -> Result<Json<ModelUser>, AppError> {
+    match Model::find_by_id(model_id).await {
+        Ok(model) => Ok(Json(model)),
+        Err(_) => Err(AppError::NotFound("Model not found".to_string())),
+    }
 }
 
 /// Upload a file for a model
