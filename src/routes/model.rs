@@ -88,7 +88,7 @@ async fn upload_model_file(
         Ok(saved_file) => {
             let model_file = ModelUpload::create(ModelUpload::new(saved_file, model_id)).await?;
 
-            return Ok(Json(model_file));
+            Ok(Json(model_file))
         }
         Err(e) => Err(e),
     }

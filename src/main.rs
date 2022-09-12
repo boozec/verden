@@ -46,7 +46,7 @@ async fn create_app() -> Router {
 
     Router::new()
         .route(
-            &format!("{}/:id", UPLOADS_ENDPOINT).to_owned(),
+            &format!("{}/:id", UPLOADS_ENDPOINT),
             get(crate::files::show_uploads),
         )
         // Map all routes to `/v1/*` namespace

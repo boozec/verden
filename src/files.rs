@@ -52,7 +52,7 @@ pub async fn upload(
 
 /// Axum endpoint which shows uploaded file
 pub async fn show_uploads(Path(id): Path<String>) -> (HeaderMap, Vec<u8>) {
-    let index = id.find(".").map(|i| i).unwrap_or(usize::max_value());
+    let index = id.find('.').unwrap_or(usize::max_value());
 
     let mut ext_name = "xxx";
     if index != usize::max_value() {
