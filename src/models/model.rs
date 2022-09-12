@@ -54,6 +54,14 @@ pub struct ModelUser {
     author: Option<JsonValue>,
 }
 
+#[derive(Deserialize, Serialize)]
+pub struct ModelUpload {
+    id: i32,
+    model_id: i32,
+    filepath: String,
+    created: NaiveDateTime,
+}
+
 impl Model {
     pub fn new(
         name: String,
@@ -171,5 +179,38 @@ impl ModelUser {
             Some(json) => json.get("id").unwrap().clone(),
             None => json!(0),
         }
+    }
+}
+
+impl ModelUpload {
+    pub fn new(filepath: String, model_id: i32) -> Self {
+        let now = Local::now().naive_utc();
+        Self {
+            id: 0,
+            filepath,
+            model_id,
+            created: now,
+        }
+    }
+
+    /// Create a new upload for model
+    pub async fn create(file: ModelUpload) -> Result<ModelUpload, AppError> {
+        let pool = unsafe { get_client() };
+
+        let rec = sqlx::query_as!(
+            ModelUpload,
+            r#"
+                INSERT INTO uploads (filepath, model_id, created)
+                VALUES ( $1, $2, $3)
+                RETURNING *
+            "#,
+            file.filepath,
+            file.model_id,
+            file.created,
+        )
+        .fetch_one(pool)
+        .await?;
+
+        Ok(rec)
     }
 }
