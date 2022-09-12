@@ -21,3 +21,6 @@ sha256 = "1.0.3"
 validator = { version = "0.16.0", features = ["derive"] }
 chrono = { version = "0.4", features = ["serde"] }
 rand = "0.8.5"
+dotenv = "0.15.0"
+config = "0.10"
+lazy_static = "1.4.0"

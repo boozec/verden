@@ -40,7 +40,7 @@ pub struct LoginCredentials {
 }
 
 static KEYS: Lazy<Keys> = Lazy::new(|| {
-    let secret = std::env::var("JWT_SECRET").expect("JWT_SECRET must be set");
+    let secret = &crate::config::CONFIG.jwt_secret;
     Keys::new(secret.as_bytes())
 });
 

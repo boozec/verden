@@ -1,4 +1,4 @@
-use crate::config::{SAVE_FILE_BASE_PATH, UPLOADS_ENDPOINT};
+use crate::config::CONFIG;
 use crate::errors::AppError;
 use axum::{
     extract::{Multipart, Path},
@@ -30,8 +30,8 @@ pub async fn upload(
         {
             let rnd = (random::<f32>() * 1000000000 as f32) as i32;
 
-            let save_filename = format!("{}/{}.{}", SAVE_FILE_BASE_PATH, rnd, ext_name);
-            uploaded_file = format!("{}/{}.{}", UPLOADS_ENDPOINT, rnd, ext_name);
+            let save_filename = format!("{}/{}.{}", CONFIG.save_file_base_path, rnd, ext_name);
+            uploaded_file = format!("{}/{}.{}", CONFIG.uploads_endpoint, rnd, ext_name);
 
             let data = file.bytes().await.unwrap();
 
@@ -70,6 +70,6 @@ pub async fn show_uploads(Path(id): Path<String>) -> (HeaderMap, Vec<u8>) {
             HeaderValue::from_str(&content_type).unwrap(),
         );
     }
-    let file_name = format!("{}/{}", SAVE_FILE_BASE_PATH, id);
+    let file_name = format!("{}/{}", CONFIG.save_file_base_path, id);
     (headers, read(&file_name).unwrap())
 }

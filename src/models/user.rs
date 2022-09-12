@@ -1,4 +1,4 @@
-use crate::config::PAGE_LIMIT;
+use crate::config::CONFIG;
 use crate::db::get_client;
 use crate::errors::AppError;
 
@@ -121,8 +121,8 @@ impl User {
             r#"SELECT id, email, username, is_staff FROM users
             LIMIT $1 OFFSET $2
             "#,
-            PAGE_LIMIT,
-            PAGE_LIMIT * page
+            CONFIG.page_limit,
+            CONFIG.page_limit * page
         )
         .fetch_all(pool)
         .await?;

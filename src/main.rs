@@ -7,13 +7,14 @@ mod models;
 mod pagination;
 mod routes;
 
-use crate::config::UPLOADS_ENDPOINT;
+use crate::config::CONFIG;
 use axum::{
     handler::Handler,
     http::{header, Request},
     routing::get,
     Router,
 };
+use std::net::{SocketAddr, ToSocketAddrs};
 use std::time::Duration;
 use tower_http::sensitive_headers::SetSensitiveHeadersLayer;
 use tower_http::{classify::ServerErrorsFailureClass, trace::TraceLayer};
@@ -24,11 +25,19 @@ use tracing::Span;
 async fn main() {
     let app = create_app().await;
 
-    // By default the server is bind at "127.0.0.1:3000"
-    let addr = std::env::var("ALLOWED_HOST").unwrap_or_else(|_| "127.0.0.1:3000".to_string());
+    let host = &CONFIG.allowed_host;
+    let addr = match host.parse::<SocketAddr>() {
+        Ok(addr) => addr,
+        Err(_) => match host.to_socket_addrs() {
+            Ok(mut addr) => addr.next().unwrap(),
+            Err(e) => {
+                panic!("{}", e);
+            }
+        },
+    };
     tracing::info!("Listening on {}", addr);
 
-    axum::Server::bind(&addr.parse().unwrap())
+    axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await
         .unwrap();
@@ -46,7 +55,7 @@ async fn create_app() -> Router {
 
     Router::new()
         .route(
-            &format!("{}/:id", UPLOADS_ENDPOINT),
+            &format!("{}/:id", CONFIG.uploads_endpoint),
             get(crate::files::show_uploads),
         )
         // Map all routes to `/v1/*` namespace

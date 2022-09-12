@@ -1,4 +1,4 @@
-use crate::config::PAGE_LIMIT;
+use crate::config::CONFIG;
 use crate::db::get_client;
 
 use crate::errors::AppError;
@@ -163,8 +163,8 @@ impl Model {
             GROUP BY models.id, users.id
             LIMIT $1 OFFSET $2
             "#,
-            PAGE_LIMIT,
-            PAGE_LIMIT * page
+            CONFIG.page_limit,
+            CONFIG.page_limit * page
         )
         .fetch_all(pool)
         .await?;

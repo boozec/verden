@@ -1,4 +1,3 @@
-use crate::config::MAX_UPLOAD_FILE_SIZE;
 use crate::errors::AppError;
 use crate::files::upload;
 use crate::models::{
@@ -69,7 +68,7 @@ async fn get_model(Path(model_id): Path<i32>) -> Result<Json<ModelUser>, AppErro
 async fn upload_model_file(
     claims: Claims,
     Path(model_id): Path<i32>,
-    ContentLengthLimit(multipart): ContentLengthLimit<Multipart, { MAX_UPLOAD_FILE_SIZE }>,
+    ContentLengthLimit(multipart): ContentLengthLimit<Multipart, { 1024 * 1024 }>,
 ) -> Result<Json<ModelUpload>, AppError> {
     let model = match Model::find_by_id(model_id).await {
         Ok(model) => model,

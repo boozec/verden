@@ -9,8 +9,7 @@ static mut CONNECTION: Option<PgPool> = None;
 /// Setup database connection. Get variable `DATABASE_URL` from the environment. Sqlx crate already
 /// defines an error for environments without DATABASE_URL.
 pub async fn setup() -> Result<(), AppError> {
-    let database_url =
-        std::env::var("DATABASE_URL").expect("Define `DATABASE_URL` environment variable.");
+    let database_url = &crate::config::CONFIG.database_url;
 
     unsafe {
         CONNECTION = Some(PgPool::connect(&database_url).await?);
