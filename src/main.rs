@@ -7,9 +7,11 @@ mod models;
 mod pagination;
 mod routes;
 
+use crate::config::UPLOADS_ENDPOINT;
 use axum::{
     handler::Handler,
     http::{header, Request},
+    routing::get,
     Router,
 };
 use std::time::Duration;
@@ -43,6 +45,10 @@ async fn create_app() -> Router {
         .nest("/models", routes::model::create_route());
 
     Router::new()
+        .route(
+            &format!("{}/:id", UPLOADS_ENDPOINT).to_owned(),
+            get(crate::files::show_uploads),
+        )
         // Map all routes to `/v1/*` namespace
         .nest("/v1", api_routes)
         .fallback(crate::routes::page_404.into_service())
