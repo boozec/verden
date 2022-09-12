@@ -1,4 +1,4 @@
-use crate::config::SAVE_FILE_BASE_PATH;
+use crate::config::{SAVE_FILE_BASE_PATH, UPLOADS_ENDPOINT};
 use crate::errors::AppError;
 use axum::extract::Multipart;
 
@@ -9,7 +9,7 @@ pub async fn upload(
     mut multipart: Multipart,
     allowed_extensions: Vec<&str>,
 ) -> Result<String, AppError> {
-    let mut save_filename = String::new();
+    let mut uploaded_file = String::new();
 
     if let Some(file) = multipart.next_field().await.unwrap() {
         let content_type = file.content_type().unwrap().to_string();
@@ -26,7 +26,8 @@ pub async fn upload(
         {
             let rnd = (random::<f32>() * 1000000000 as f32) as i32;
 
-            save_filename = format!("{}/{}.{}", SAVE_FILE_BASE_PATH, rnd, ext_name);
+            let save_filename = format!("{}/{}.{}", SAVE_FILE_BASE_PATH, rnd, ext_name);
+            uploaded_file = format!("{}/{}.{}", UPLOADS_ENDPOINT, rnd, ext_name);
 
             let data = file.bytes().await.unwrap();
 
@@ -36,8 +37,8 @@ pub async fn upload(
         }
     }
 
-    if !save_filename.is_empty() {
-        return Ok(save_filename);
+    if !uploaded_file.is_empty() {
+        return Ok(uploaded_file);
     }
 
     Err(AppError::BadRequest(
