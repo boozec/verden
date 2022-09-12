@@ -1,4 +1,4 @@
-# Verden - Social for 3D artists
+# Verden 🌐🎨
 
 This software is part of a project for the Web Programming course at UNICT.
 
