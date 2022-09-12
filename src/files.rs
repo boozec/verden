@@ -2,7 +2,7 @@ use crate::config::{SAVE_FILE_BASE_PATH, UPLOADS_ENDPOINT};
 use crate::errors::AppError;
 use axum::{
     extract::{Multipart, Path},
-    http::header::HeaderMap,
+    http::header::{HeaderMap, HeaderName, HeaderValue},
 };
 use std::fs::read;
 
@@ -52,13 +52,24 @@ pub async fn upload(
 
 /// Axum endpoint which shows uploaded file
 pub async fn show_uploads(Path(id): Path<String>) -> (HeaderMap, Vec<u8>) {
-    // let index = id.find(".").map(|i| i).unwrap_or(usize::max_value());
+    let index = id.find(".").map(|i| i).unwrap_or(usize::max_value());
 
-    // let mut ext_name = "xxx";
-    // if index != usize::max_value() {
-    //     ext_name = &id[index + 1..];
-    // }
-    let headers = HeaderMap::new();
+    let mut ext_name = "xxx";
+    if index != usize::max_value() {
+        ext_name = &id[index + 1..];
+    }
+    let mut headers = HeaderMap::new();
+
+    if vec!["jpg", "jpeg", "png", "gif", "webp"]
+        .iter()
+        .any(|&x| x == ext_name)
+    {
+        let content_type = format!("image/{}", ext_name);
+        headers.insert(
+            HeaderName::from_static("content-type"),
+            HeaderValue::from_str(&content_type).unwrap(),
+        );
+    }
     let file_name = format!("{}/{}", SAVE_FILE_BASE_PATH, id);
     (headers, read(&file_name).unwrap())
 }
