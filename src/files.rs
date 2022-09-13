@@ -4,7 +4,7 @@ use axum::{
     extract::{Multipart, Path},
     http::header::{HeaderMap, HeaderName, HeaderValue},
 };
-use std::fs::read;
+use std::fs;
 
 use rand::random;
 
@@ -76,5 +76,5 @@ pub async fn show_uploads(Path(id): Path<String>) -> (HeaderMap, Vec<u8>) {
         );
     }
     let file_name = format!("{}/{}", CONFIG.save_file_base_path, id);
-    (headers, read(&file_name).unwrap())
+    (headers, fs::read(&file_name).unwrap())
 }
