@@ -32,11 +32,20 @@ pub struct AuthBody {
     token_type: String,
 }
 
-/// Payload used for user creation
+/// Payload used for login
 #[derive(Deserialize)]
 pub struct LoginCredentials {
     pub username: String,
     pub password: String,
+}
+
+/// Paylod used for user creation
+#[derive(Deserialize)]
+pub struct SignUpForm {
+    pub email: String,
+    pub username: String,
+    pub password1: String,
+    pub password2: String,
 }
 
 static KEYS: Lazy<Keys> = Lazy::new(|| {

@@ -131,4 +131,34 @@ impl User {
 
         Ok(row.count.unwrap())
     }
+
+    /// Prevent the "uniquess" Postgres fields check. Check if username has been taken
+    pub async fn username_has_taken(username: &String) -> Result<bool, AppError> {
+        let pool = unsafe { get_client() };
+        let row = sqlx::query!(
+            r#"
+                SELECT COUNT(id) as count FROM users WHERE username = $1
+            "#,
+            username,
+        )
+        .fetch_one(pool)
+        .await?;
+
+        Ok(row.count.unwrap() > 0)
+    }
+
+    /// Prevent the "uniquess" Postgres fields check. Check if email has been taken
+    pub async fn email_has_taken(email: &String) -> Result<bool, AppError> {
+        let pool = unsafe { get_client() };
+        let row = sqlx::query!(
+            r#"
+                SELECT COUNT(id) as count FROM users WHERE email = $1
+            "#,
+            email,
+        )
+        .fetch_one(pool)
+        .await?;
+
+        Ok(row.count.unwrap() > 0)
+    }
 }
