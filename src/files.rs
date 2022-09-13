@@ -57,7 +57,14 @@ pub async fn upload(
 
 /// Delete a file from the filesystem
 pub fn delete_upload(filename: &String) -> Result<(), AppError> {
-    fs::remove_file(filename)?;
+    let last_slash_index = filename.rfind('/').unwrap();
+    let path = format!(
+        "{}/{}",
+        CONFIG.save_file_base_path,
+        &filename[last_slash_index + 1..]
+    );
+
+    fs::remove_file(path)?;
 
     Ok(())
 }
