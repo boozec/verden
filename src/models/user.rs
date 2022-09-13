@@ -3,6 +3,7 @@ use crate::db::get_client;
 use crate::errors::AppError;
 
 use serde::{Deserialize, Serialize};
+use serde_with::{serde_as, NoneAsEmptyString};
 use validator::Validate;
 
 /// User model
@@ -16,9 +17,11 @@ pub struct User {
     #[validate(length(min = 8, message = "Must be min 8 chars length"))]
     password: String,
     is_staff: Option<bool>,
+    avatar: Option<String>,
 }
 
 /// Response used to print a user (or a users list)
+#[serde_as]
 #[derive(Deserialize, Serialize)]
 pub struct UserList {
     // It is public because it used by `Claims` creation
@@ -26,6 +29,8 @@ pub struct UserList {
     email: String,
     username: String,
     is_staff: Option<bool>,
+    #[serde_as(as = "NoneAsEmptyString")]
+    avatar: Option<String>,
 }
 
 impl User {
@@ -37,6 +42,7 @@ impl User {
             username,
             password,
             is_staff: Some(false),
+            avatar: None,
         }
     }
 
@@ -54,7 +60,7 @@ impl User {
             r#"
                 INSERT INTO users (email, username, password)
                 VALUES ( $1, $2, $3)
-                RETURNING id, email, username, is_staff
+                RETURNING id, email, username, is_staff, avatar
             "#,
             user.email,
             user.username,
@@ -75,7 +81,7 @@ impl User {
         let rec = sqlx::query_as!(
             UserList,
             r#"
-                SELECT id, email, username, is_staff FROM "users"
+                SELECT id, email, username, is_staff, avatar FROM "users"
                 WHERE username = $1 AND password = $2
             "#,
             user.username,
@@ -94,7 +100,7 @@ impl User {
         let rec = sqlx::query_as!(
             UserList,
             r#"
-                SELECT id, email, username, is_staff FROM "users"
+                SELECT id, email, username, is_staff, avatar FROM "users"
                 WHERE id = $1
             "#,
             user_id
@@ -110,7 +116,7 @@ impl User {
         let pool = unsafe { get_client() };
         let rows = sqlx::query_as!(
             UserList,
-            r#"SELECT id, email, username, is_staff FROM users
+            r#"SELECT id, email, username, is_staff, avatar FROM users
             LIMIT $1 OFFSET $2
             "#,
             CONFIG.page_limit,
