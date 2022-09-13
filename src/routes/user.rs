@@ -1,7 +1,7 @@
 use crate::errors::AppError;
 use crate::models::{
     auth::Claims,
-    user::{User, UserCreate, UserList},
+    user::{User, UserList},
 };
 use crate::pagination::Pagination;
 use axum::{
@@ -14,7 +14,7 @@ use serde::Serialize;
 /// Create routes for `/v1/users/` namespace
 pub fn create_route() -> Router {
     Router::new()
-        .route("/", get(list_users).post(create_user))
+        .route("/", get(list_users))
         .route("/:id", get(get_user))
 }
 
@@ -34,17 +34,6 @@ async fn list_users(
     let count = User::count().await?;
 
     Ok(Json(UserPagination { count, results }))
-}
-
-/// Create an user. Checks Authorization token
-async fn create_user(
-    Json(payload): Json<UserCreate>,
-    _: Claims,
-) -> Result<Json<UserList>, AppError> {
-    let user = User::new(payload.email, payload.username, payload.password);
-    let user_new = User::create(user).await?;
-
-    Ok(Json(user_new))
 }
 
 /// Get an user with id = `user_id`. Checks Authorization token

@@ -28,14 +28,6 @@ pub struct UserList {
     is_staff: Option<bool>,
 }
 
-/// Payload used for user creation
-#[derive(Deserialize)]
-pub struct UserCreate {
-    pub email: String,
-    pub username: String,
-    pub password: String,
-}
-
 impl User {
     /// By default an user has id = 0. It is not created yet
     pub fn new(email: String, username: String, password: String) -> Self {
