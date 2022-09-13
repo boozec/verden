@@ -12,7 +12,7 @@ pub async fn setup() -> Result<(), AppError> {
     let database_url = &crate::config::CONFIG.database_url;
 
     unsafe {
-        CONNECTION = Some(PgPool::connect(&database_url).await?);
+        CONNECTION = Some(PgPool::connect(database_url).await?);
     }
 
     Ok(())
