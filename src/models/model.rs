@@ -98,7 +98,7 @@ impl Model {
             .validate()
             .map_err(|error| AppError::BadRequest(error.to_string()))?;
 
-        let rec = sqlx::query_as!(
+        let rec = sqlx::query_as_unchecked!(
             Model,
             r#"
                 INSERT INTO models (name, description, duration, height, weight, printer, material, author_id, created, updated)
@@ -126,7 +126,7 @@ impl Model {
     pub async fn find_by_id(model_id: i32) -> Result<ModelUser, AppError> {
         let pool = unsafe { get_client() };
 
-        let rec = sqlx::query_as!(
+        let rec = sqlx::query_as_unchecked!(
             ModelUser,
             r#"
                 SELECT
@@ -150,7 +150,7 @@ impl Model {
     /// List all models
     pub async fn list(page: i64) -> Result<Vec<ModelUser>, AppError> {
         let pool = unsafe { get_client() };
-        let rows = sqlx::query_as!(
+        let rows = sqlx::query_as_unchecked!(
             ModelUser,
             r#"
             SELECT
@@ -175,7 +175,7 @@ impl Model {
     /// Return the number of models.
     pub async fn count() -> Result<i64, AppError> {
         let pool = unsafe { get_client() };
-        let row = sqlx::query!(r#"SELECT COUNT(id) as count FROM models"#)
+        let row = sqlx::query_unchecked!(r#"SELECT COUNT(id) as count FROM models"#)
             .fetch_one(pool)
             .await?;
 
@@ -207,7 +207,7 @@ impl ModelUpload {
     pub async fn create(file: ModelUpload) -> Result<ModelUpload, AppError> {
         let pool = unsafe { get_client() };
 
-        let rec = sqlx::query_as!(
+        let rec = sqlx::query_as_unchecked!(
             ModelUpload,
             r#"
                 INSERT INTO uploads (filepath, model_id, created)

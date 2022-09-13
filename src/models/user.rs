@@ -55,7 +55,7 @@ impl User {
 
         let crypted_password = sha256::digest(user.password);
 
-        let rec = sqlx::query_as!(
+        let rec = sqlx::query_as_unchecked!(
             UserList,
             r#"
                 INSERT INTO users (email, username, password)
@@ -78,7 +78,7 @@ impl User {
 
         let crypted_password = sha256::digest(user.password);
 
-        let rec = sqlx::query_as!(
+        let rec = sqlx::query_as_unchecked!(
             UserList,
             r#"
                 SELECT id, email, username, is_staff, avatar FROM "users"
@@ -97,7 +97,7 @@ impl User {
     pub async fn find_by_id(user_id: i32) -> Result<UserList, AppError> {
         let pool = unsafe { get_client() };
 
-        let rec = sqlx::query_as!(
+        let rec = sqlx::query_as_unchecked!(
             UserList,
             r#"
                 SELECT id, email, username, is_staff, avatar FROM "users"
@@ -114,7 +114,7 @@ impl User {
     /// List all users
     pub async fn list(page: i64) -> Result<Vec<UserList>, AppError> {
         let pool = unsafe { get_client() };
-        let rows = sqlx::query_as!(
+        let rows = sqlx::query_as_unchecked!(
             UserList,
             r#"SELECT id, email, username, is_staff, avatar FROM users
             LIMIT $1 OFFSET $2
@@ -131,7 +131,7 @@ impl User {
     /// Return the number of users.
     pub async fn count() -> Result<i64, AppError> {
         let pool = unsafe { get_client() };
-        let row = sqlx::query!(r#"SELECT COUNT(id) as count FROM users"#)
+        let row = sqlx::query_unchecked!(r#"SELECT COUNT(id) as count FROM users"#)
             .fetch_one(pool)
             .await?;
 
@@ -141,7 +141,7 @@ impl User {
     /// Prevent the "uniquess" Postgres fields check. Check if username has been taken
     pub async fn username_has_taken(username: &String) -> Result<bool, AppError> {
         let pool = unsafe { get_client() };
-        let row = sqlx::query!(
+        let row = sqlx::query_unchecked!(
             r#"
                 SELECT COUNT(id) as count FROM users WHERE username = $1
             "#,
@@ -156,7 +156,7 @@ impl User {
     /// Prevent the "uniquess" Postgres fields check. Check if email has been taken
     pub async fn email_has_taken(email: &String) -> Result<bool, AppError> {
         let pool = unsafe { get_client() };
-        let row = sqlx::query!(
+        let row = sqlx::query_unchecked!(
             r#"
                 SELECT COUNT(id) as count FROM users WHERE email = $1
             "#,
@@ -173,7 +173,7 @@ impl UserList {
     // Edit an user
     pub async fn edit_avatar(&mut self, avatar: Option<String>) -> Result<(), AppError> {
         let pool = unsafe { get_client() };
-        sqlx::query!(
+        sqlx::query_unchecked!(
             r#"
             UPDATE users SET avatar = $1 WHERE id = $2
             "#,
