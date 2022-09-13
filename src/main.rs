@@ -10,14 +10,19 @@ mod routes;
 use crate::config::CONFIG;
 use axum::{
     handler::Handler,
-    http::{header, Request},
+    http::{header, Method, Request},
     routing::get,
     Router,
 };
+
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::time::Duration;
-use tower_http::sensitive_headers::SetSensitiveHeadersLayer;
-use tower_http::{classify::ServerErrorsFailureClass, trace::TraceLayer};
+use tower_http::{
+    classify::ServerErrorsFailureClass,
+    cors::{Any, CorsLayer},
+    sensitive_headers::SetSensitiveHeadersLayer,
+    trace::TraceLayer,
+};
 use tracing::Span;
 
 /// Main application, called by the execution of the software
@@ -77,5 +82,17 @@ async fn create_app() -> Router {
                         tracing::error!("{} | {} s", error, latency.as_secs());
                     },
                 ),
+        )
+        .layer(
+            CorsLayer::new()
+                .allow_methods([
+                    Method::OPTIONS,
+                    Method::GET,
+                    Method::POST,
+                    Method::PUT,
+                    Method::DELETE,
+                ])
+                .allow_headers(vec![header::CONTENT_TYPE])
+                .allow_origin(Any),
         )
 }
