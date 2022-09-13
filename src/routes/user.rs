@@ -17,7 +17,7 @@ pub fn create_route() -> Router {
     Router::new()
         .route("/", get(list_users))
         .route("/me", get(get_me))
-        .route("/me/avatar", put(edit_my_avatar))
+        .route("/me/avatar", put(edit_my_avatar).delete(delete_my_avatar))
         .route("/:id", get(get_user))
 }
 
@@ -72,12 +72,31 @@ async fn edit_my_avatar(
     .await
     {
         Ok(saved_file) => {
-            user.edit_avatar(saved_file).await?;
+            user.edit_avatar(Some(saved_file)).await?;
 
             Ok(Json(user))
         }
         Err(e) => Err(e),
     }
+}
+
+/// Delete the avatar of the user linked to the claims
+async fn delete_my_avatar(claims: Claims) -> Result<Json<UserList>, AppError> {
+    let mut user = match User::find_by_id(claims.user_id).await {
+        Ok(user) => user,
+        Err(_) => {
+            return Err(AppError::NotFound("User not found".to_string()));
+        }
+    };
+
+    if user.avatar.is_some() {
+        let avatar_url = user.avatar.as_ref().unwrap();
+        delete_upload(&avatar_url)?;
+    }
+
+    user.edit_avatar(None).await?;
+
+    Ok(Json(user))
 }
 
 /// Get an user with id = `user_id`. Checks Authorization token

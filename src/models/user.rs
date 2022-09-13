@@ -171,7 +171,7 @@ impl User {
 
 impl UserList {
     // Edit an user
-    pub async fn edit_avatar(&mut self, avatar: String) -> Result<(), AppError> {
+    pub async fn edit_avatar(&mut self, avatar: Option<String>) -> Result<(), AppError> {
         let pool = unsafe { get_client() };
         sqlx::query!(
             r#"
@@ -183,7 +183,7 @@ impl UserList {
         .execute(pool)
         .await?;
 
-        self.avatar = Some(avatar);
+        self.avatar = avatar;
 
         Ok(())
     }
