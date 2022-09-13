@@ -55,6 +55,13 @@ pub async fn upload(
     ))
 }
 
+/// Delete a file from the filesystem
+pub async fn delete_upload(filename: String) -> Result<(), AppError> {
+    fs::remove_file(filename)?;
+
+    Ok(())
+}
+
 /// Axum endpoint which shows uploaded file
 pub async fn show_uploads(Path(id): Path<String>) -> (HeaderMap, Vec<u8>) {
     let index = id.find('.').unwrap_or(usize::max_value());

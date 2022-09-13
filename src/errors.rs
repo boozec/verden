@@ -68,3 +68,10 @@ impl From<std::string::String> for AppError {
         AppError::BadRequest(error)
     }
 }
+
+/// Raise a generic io error
+impl From<std::io::Error> for AppError {
+    fn from(error: std::io::Error) -> Self {
+        AppError::BadRequest(error.to_string())
+    }
+}
