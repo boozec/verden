@@ -8,10 +8,12 @@ use std::fs::read;
 
 use rand::random;
 
-/// Upload a file. Returns an `AppError` or the path of the uploaded file
+/// Upload a file. Returns an `AppError` or the path of the uploaded file.
+/// If `filename` param has a value choose it as filename
 pub async fn upload(
     mut multipart: Multipart,
     allowed_extensions: Vec<&str>,
+    filename: Option<String>,
 ) -> Result<String, AppError> {
     let mut uploaded_file = String::new();
 
@@ -28,10 +30,13 @@ pub async fn upload(
             .iter()
             .any(|&x| x.to_lowercase() == ext_name)
         {
-            let rnd = (random::<f32>() * 1000000000 as f32) as i32;
+            let name = match filename {
+                Some(name) => name,
+                None => (random::<f32>() * 1000000000 as f32).to_string(),
+            };
 
-            let save_filename = format!("{}/{}.{}", CONFIG.save_file_base_path, rnd, ext_name);
-            uploaded_file = format!("{}/{}.{}", CONFIG.uploads_endpoint, rnd, ext_name);
+            let save_filename = format!("{}/{}.{}", CONFIG.save_file_base_path, name, ext_name);
+            uploaded_file = format!("{}/{}.{}", CONFIG.uploads_endpoint, name, ext_name);
 
             let data = file.bytes().await.unwrap();
 

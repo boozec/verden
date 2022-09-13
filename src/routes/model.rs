@@ -83,7 +83,7 @@ async fn upload_model_file(
 
     let allowed_extensions = vec!["stl", "obj", "png", "jpg", "jpeg", "gif", "webp", "blend"];
 
-    match upload(multipart, allowed_extensions).await {
+    match upload(multipart, allowed_extensions, None).await {
         Ok(saved_file) => {
             let model_file = ModelUpload::create(ModelUpload::new(saved_file, model_id)).await?;
 
