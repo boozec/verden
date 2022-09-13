@@ -30,7 +30,7 @@ pub struct UserList {
     username: String,
     is_staff: Option<bool>,
     #[serde_as(as = "NoneAsEmptyString")]
-    avatar: Option<String>,
+    pub avatar: Option<String>,
 }
 
 impl User {
@@ -166,5 +166,25 @@ impl User {
         .await?;
 
         Ok(row.count.unwrap() > 0)
+    }
+}
+
+impl UserList {
+    // Edit an user
+    pub async fn edit_avatar(&mut self, avatar: String) -> Result<(), AppError> {
+        let pool = unsafe { get_client() };
+        sqlx::query!(
+            r#"
+            UPDATE users SET avatar = $1 WHERE id = $2
+            "#,
+            avatar,
+            self.id,
+        )
+        .execute(pool)
+        .await?;
+
+        self.avatar = Some(avatar);
+
+        Ok(())
     }
 }
