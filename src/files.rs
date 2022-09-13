@@ -56,7 +56,7 @@ pub async fn upload(
 }
 
 /// Delete a file from the filesystem
-pub async fn delete_upload(filename: String) -> Result<(), AppError> {
+pub fn delete_upload(filename: &String) -> Result<(), AppError> {
     fs::remove_file(filename)?;
 
     Ok(())
