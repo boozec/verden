@@ -4,13 +4,14 @@ use crate::db::get_client;
 use crate::errors::AppError;
 use serde_json::json;
 use sqlx::types::JsonValue;
+use sqlx::Row;
 
 use chrono::{Local, NaiveDateTime};
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
 /// Model for models.
-#[derive(Deserialize, Serialize, Validate)]
+#[derive(Deserialize, Serialize, Validate, sqlx::FromRow)]
 pub struct Model {
     id: i32,
     #[validate(length(min = 2, message = "Can not be empty"))]
@@ -38,7 +39,7 @@ pub struct ModelCreate {
     pub material: Option<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, sqlx::FromRow)]
 pub struct ModelUser {
     id: i32,
     name: String,
@@ -55,7 +56,7 @@ pub struct ModelUser {
     uploads: Option<JsonValue>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, sqlx::FromRow)]
 pub struct ModelUpload {
     id: i32,
     model_id: i32,
@@ -98,24 +99,22 @@ impl Model {
             .validate()
             .map_err(|error| AppError::BadRequest(error.to_string()))?;
 
-        let rec = sqlx::query_as_unchecked!(
-            Model,
+        let rec: Model = sqlx::query_as(
             r#"
                 INSERT INTO models (name, description, duration, height, weight, printer, material, author_id, created, updated)
                 VALUES ( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                 RETURNING *
-            "#,
-            model.name,
-            model.description,
-            model.duration,
-            model.height,
-            model.weight,
-            model.printer,
-            model.material,
-            model.author_id,
-            model.created,
-            model.updated,
-        )
+            "#)
+            .bind(model.name)
+            .bind(model.description)
+            .bind(model.duration)
+            .bind(model.height)
+            .bind(model.weight)
+            .bind(model.printer)
+            .bind(model.material)
+            .bind(model.author_id)
+            .bind(model.created)
+            .bind(model.updated)
         .fetch_one(pool)
         .await?;
 
@@ -126,8 +125,7 @@ impl Model {
     pub async fn find_by_id(model_id: i32) -> Result<ModelUser, AppError> {
         let pool = unsafe { get_client() };
 
-        let rec = sqlx::query_as_unchecked!(
-            ModelUser,
+        let rec: ModelUser = sqlx::query_as(
             r#"
                 SELECT
                     models.*,
@@ -138,9 +136,8 @@ impl Model {
                 JOIN uploads ON uploads.model_id = models.id
                 WHERE models.id = $1
                 GROUP BY models.id, users.id
-            "#,
-            model_id
-        )
+            "#)
+        .bind(model_id)
         .fetch_one(pool)
         .await?;
 
@@ -150,8 +147,7 @@ impl Model {
     /// List all models
     pub async fn list(page: i64) -> Result<Vec<ModelUser>, AppError> {
         let pool = unsafe { get_client() };
-        let rows = sqlx::query_as_unchecked!(
-            ModelUser,
+        let rows: Vec<ModelUser>= sqlx::query_as(
             r#"
             SELECT
                 models.*,
@@ -162,10 +158,9 @@ impl Model {
             JOIN uploads ON uploads.model_id = models.id
             GROUP BY models.id, users.id
             LIMIT $1 OFFSET $2
-            "#,
-            CONFIG.page_limit,
-            CONFIG.page_limit * page
-        )
+            "#)
+        .bind(CONFIG.page_limit)
+        .bind(CONFIG.page_limit * page)
         .fetch_all(pool)
         .await?;
 
@@ -175,11 +170,12 @@ impl Model {
     /// Return the number of models.
     pub async fn count() -> Result<i64, AppError> {
         let pool = unsafe { get_client() };
-        let row = sqlx::query_unchecked!(r#"SELECT COUNT(id) as count FROM models"#)
+        let cursor = sqlx::query(r#"SELECT COUNT(id) as count FROM models"#)
             .fetch_one(pool)
             .await?;
 
-        Ok(row.count.unwrap())
+        let count: i64 = cursor.try_get(0).unwrap();
+        Ok(count)
     }
 }
 
@@ -207,17 +203,16 @@ impl ModelUpload {
     pub async fn create(file: ModelUpload) -> Result<ModelUpload, AppError> {
         let pool = unsafe { get_client() };
 
-        let rec = sqlx::query_as_unchecked!(
-            ModelUpload,
+        let rec: ModelUpload = sqlx::query_as(
             r#"
                 INSERT INTO uploads (filepath, model_id, created)
                 VALUES ( $1, $2, $3)
                 RETURNING *
             "#,
-            file.filepath,
-            file.model_id,
-            file.created,
         )
+        .bind(file.filepath)
+        .bind(file.model_id)
+        .bind(file.created)
         .fetch_one(pool)
         .await?;
 

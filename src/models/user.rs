@@ -4,6 +4,7 @@ use crate::errors::AppError;
 
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, NoneAsEmptyString};
+use sqlx::Row;
 use validator::Validate;
 
 /// User model
@@ -22,7 +23,7 @@ pub struct User {
 
 /// Response used to print a user (or a users list)
 #[serde_as]
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, sqlx::FromRow)]
 pub struct UserList {
     // It is public because it used by `Claims` creation
     pub id: i32,
@@ -55,17 +56,16 @@ impl User {
 
         let crypted_password = sha256::digest(user.password);
 
-        let rec = sqlx::query_as_unchecked!(
-            UserList,
+        let rec: UserList = sqlx::query_as(
             r#"
                 INSERT INTO users (email, username, password)
                 VALUES ( $1, $2, $3)
                 RETURNING id, email, username, is_staff, avatar
             "#,
-            user.email,
-            user.username,
-            crypted_password
         )
+        .bind(user.email)
+        .bind(user.username)
+        .bind(crypted_password)
         .fetch_one(pool)
         .await?;
 
@@ -78,15 +78,14 @@ impl User {
 
         let crypted_password = sha256::digest(user.password);
 
-        let rec = sqlx::query_as_unchecked!(
-            UserList,
+        let rec: UserList = sqlx::query_as(
             r#"
                 SELECT id, email, username, is_staff, avatar FROM "users"
                 WHERE username = $1 AND password = $2
             "#,
-            user.username,
-            crypted_password
         )
+        .bind(user.username)
+        .bind(crypted_password)
         .fetch_one(pool)
         .await?;
 
@@ -97,14 +96,13 @@ impl User {
     pub async fn find_by_id(user_id: i32) -> Result<UserList, AppError> {
         let pool = unsafe { get_client() };
 
-        let rec = sqlx::query_as_unchecked!(
-            UserList,
+        let rec: UserList = sqlx::query_as(
             r#"
                 SELECT id, email, username, is_staff, avatar FROM "users"
                 WHERE id = $1
             "#,
-            user_id
         )
+        .bind(user_id)
         .fetch_one(pool)
         .await?;
 
@@ -114,14 +112,13 @@ impl User {
     /// List all users
     pub async fn list(page: i64) -> Result<Vec<UserList>, AppError> {
         let pool = unsafe { get_client() };
-        let rows = sqlx::query_as_unchecked!(
-            UserList,
+        let rows: Vec<UserList> = sqlx::query_as(
             r#"SELECT id, email, username, is_staff, avatar FROM users
             LIMIT $1 OFFSET $2
             "#,
-            CONFIG.page_limit,
-            CONFIG.page_limit * page
         )
+        .bind(CONFIG.page_limit)
+        .bind(CONFIG.page_limit * page)
         .fetch_all(pool)
         .await?;
 
@@ -131,41 +128,46 @@ impl User {
     /// Return the number of users.
     pub async fn count() -> Result<i64, AppError> {
         let pool = unsafe { get_client() };
-        let row = sqlx::query_unchecked!(r#"SELECT COUNT(id) as count FROM users"#)
+        let cursor = sqlx::query(r#"SELECT COUNT(id) as count FROM users"#)
             .fetch_one(pool)
             .await?;
 
-        Ok(row.count.unwrap())
+        let count: i64 = cursor.try_get(0).unwrap();
+        Ok(count)
     }
 
     /// Prevent the "uniquess" Postgres fields check. Check if username has been taken
     pub async fn username_has_taken(username: &String) -> Result<bool, AppError> {
         let pool = unsafe { get_client() };
-        let row = sqlx::query_unchecked!(
+        let cursor = sqlx::query(
             r#"
                 SELECT COUNT(id) as count FROM users WHERE username = $1
             "#,
-            username,
         )
+        .bind(username)
         .fetch_one(pool)
         .await?;
 
-        Ok(row.count.unwrap() > 0)
+        let count: i64 = cursor.try_get(0).unwrap();
+
+        Ok(count > 0)
     }
 
     /// Prevent the "uniquess" Postgres fields check. Check if email has been taken
     pub async fn email_has_taken(email: &String) -> Result<bool, AppError> {
         let pool = unsafe { get_client() };
-        let row = sqlx::query_unchecked!(
+        let cursor = sqlx::query(
             r#"
                 SELECT COUNT(id) as count FROM users WHERE email = $1
             "#,
-            email,
         )
+        .bind(email)
         .fetch_one(pool)
         .await?;
 
-        Ok(row.count.unwrap() > 0)
+        let count: i64 = cursor.try_get(0).unwrap();
+
+        Ok(count > 0)
     }
 }
 
@@ -173,13 +175,13 @@ impl UserList {
     // Edit an user
     pub async fn edit_avatar(&mut self, avatar: Option<String>) -> Result<(), AppError> {
         let pool = unsafe { get_client() };
-        sqlx::query_unchecked!(
+        sqlx::query(
             r#"
             UPDATE users SET avatar = $1 WHERE id = $2
             "#,
-            avatar,
-            self.id,
         )
+        .bind(&avatar)
+        .bind(self.id)
         .execute(pool)
         .await?;
 
