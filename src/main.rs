@@ -92,7 +92,7 @@ async fn create_app() -> Router {
                     Method::PUT,
                     Method::DELETE,
                 ])
-                .allow_headers(vec![header::CONTENT_TYPE])
+                .allow_headers(vec![header::CONTENT_TYPE, header::AUTHORIZATION])
                 .allow_origin(Any),
         )
 }
