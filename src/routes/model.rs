@@ -5,6 +5,7 @@ use crate::models::{
     model::{Model, ModelCreate, ModelUpload, ModelUser},
 };
 use crate::pagination::Pagination;
+use crate::routes::JsonCreate;
 use axum::{
     extract::{ContentLengthLimit, Multipart, Path, Query},
     routing::{get, post},
@@ -39,7 +40,7 @@ async fn list_models(pagination: Query<Pagination>) -> Result<Json<ModelPaginati
 async fn create_model(
     Json(payload): Json<ModelCreate>,
     claims: Claims,
-) -> Result<Json<Model>, AppError> {
+) -> Result<JsonCreate<Model>, AppError> {
     let model = Model::new(
         payload.name,
         payload.description,
@@ -53,7 +54,7 @@ async fn create_model(
 
     let model_new = Model::create(model).await?;
 
-    Ok(Json(model_new))
+    Ok(JsonCreate(model_new))
 }
 
 /// Get a model with id = `model_id`

@@ -3,6 +3,7 @@ use crate::models::{
     auth::{AuthBody, Claims, LoginCredentials, SignUpForm},
     user::User,
 };
+use crate::routes::JsonCreate;
 use axum::{routing::post, Json, Router};
 
 /// Create routes for `/v1/auth/` namespace
@@ -27,7 +28,7 @@ async fn make_login(Json(payload): Json<LoginCredentials>) -> Result<Json<AuthBo
 }
 
 /// Create a new user
-async fn signup(Json(payload): Json<SignUpForm>) -> Result<Json<AuthBody>, AppError> {
+async fn signup(Json(payload): Json<SignUpForm>) -> Result<JsonCreate<AuthBody>, AppError> {
     if payload.password1 != payload.password2 {
         return Err(AppError::BadRequest(
             "The inserted passwords do not match".to_string(),
@@ -51,5 +52,5 @@ async fn signup(Json(payload): Json<SignUpForm>) -> Result<Json<AuthBody>, AppEr
 
     let claims = Claims::new(user.id);
     let token = claims.get_token()?;
-    Ok(Json(AuthBody::new(token)))
+    Ok(JsonCreate(AuthBody::new(token)))
 }
