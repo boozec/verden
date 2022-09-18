@@ -157,6 +157,7 @@ impl Model {
             JOIN users ON users.id = models.author_id
             LEFT JOIN uploads ON uploads.model_id = models.id
             GROUP BY models.id, users.id
+            ORDER BY id DESC
             LIMIT $1 OFFSET $2
             "#)
         .bind(CONFIG.page_limit)
