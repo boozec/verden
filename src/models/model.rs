@@ -130,10 +130,10 @@ impl Model {
                 SELECT
                     models.*,
                     json_build_object('id', users.id, 'email', users.email, 'username', users.username, 'is_staff', users.is_staff) as author,
-                    json_agg(uploads.*) as uploads
+                    json_agg(uploads.*) filter (where uploads.* is not null) as uploads
                 FROM models
                 JOIN users ON users.id = models.author_id
-                JOIN uploads ON uploads.model_id = models.id
+                LEFT JOIN uploads ON uploads.model_id = models.id
                 WHERE models.id = $1
                 GROUP BY models.id, users.id
             "#)
@@ -152,10 +152,10 @@ impl Model {
             SELECT
                 models.*,
                 json_build_object('id', users.id, 'email', users.email, 'username', users.username, 'is_staff', users.is_staff) as author,
-                json_agg(uploads.*) as uploads
+                json_agg(uploads.*) filter (where uploads.* is not null) as uploads
             FROM models
             JOIN users ON users.id = models.author_id
-            JOIN uploads ON uploads.model_id = models.id
+            LEFT JOIN uploads ON uploads.model_id = models.id
             GROUP BY models.id, users.id
             LIMIT $1 OFFSET $2
             "#)
