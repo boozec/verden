@@ -129,7 +129,7 @@ impl Model {
             r#"
                 SELECT
                     models.*,
-                    json_build_object('id', users.id, 'email', users.email, 'username', users.username, 'is_staff', users.is_staff) as author,
+                    json_build_object('id', users.id, 'email', users.email, 'username', users.username, 'is_staff', users.is_staff, 'avatar', users.avatar) as author,
                     json_agg(uploads.*) filter (where uploads.* is not null) as uploads
                 FROM models
                 JOIN users ON users.id = models.author_id
@@ -151,7 +151,7 @@ impl Model {
             r#"
             SELECT
                 models.*,
-                json_build_object('id', users.id, 'email', users.email, 'username', users.username, 'is_staff', users.is_staff) as author,
+                json_build_object('id', users.id, 'email', users.email, 'username', users.username, 'is_staff', users.is_staff, 'avatar', users.avatar) as author,
                 json_agg(uploads.*) filter (where uploads.* is not null) as uploads
             FROM models
             JOIN users ON users.id = models.author_id
