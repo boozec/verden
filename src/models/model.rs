@@ -194,6 +194,7 @@ impl Model {
 }
 
 impl ModelUser {
+    /// Returns the author id from the `JsonValue`
     pub fn author_id(&self) -> JsonValue {
         match &self.author {
             Some(json) => json.get("id").unwrap().clone(),
@@ -201,10 +202,10 @@ impl ModelUser {
         }
     }
 
-    pub async fn upload_paths(&self) -> Option<Vec<String>> {
-        if self.uploads.is_none() {
-            return None;
-        }
+    /// Returns a vec of string made by all the filepaths from the model
+    pub async fn list_upload_filepaths(&self) -> Option<Vec<String>> {
+        // Raise a `None` if `self.uploads` is `None`
+        self.uploads.as_ref()?;
 
         let uploads = ModelUpload::find_by_model(self.id)
             .await
@@ -215,7 +216,7 @@ impl ModelUser {
             .map(|x| x.filepath.clone())
             .collect::<Vec<String>>();
 
-        return Some(paths);
+        Some(paths)
     }
 }
 

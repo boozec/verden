@@ -63,7 +63,7 @@ async fn edit_my_avatar(
 
     if user.avatar.is_some() {
         let avatar_url = user.avatar.as_ref().unwrap();
-        delete_upload(&avatar_url)?;
+        delete_upload(avatar_url)?;
     }
 
     match upload(
@@ -93,7 +93,7 @@ async fn delete_my_avatar(claims: Claims) -> Result<Json<UserList>, AppError> {
 
     if user.avatar.is_some() {
         let avatar_url = user.avatar.as_ref().unwrap();
-        delete_upload(&avatar_url)?;
+        delete_upload(avatar_url)?;
     }
 
     user.edit_avatar(None).await?;

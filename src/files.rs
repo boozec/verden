@@ -55,7 +55,7 @@ pub async fn upload(
 }
 
 /// Delete a file from the filesystem
-pub fn delete_upload(filename: &String) -> Result<(), AppError> {
+pub fn delete_upload(filename: &str) -> Result<(), AppError> {
     let last_slash_index = filename.rfind('/').unwrap();
     let path = format!(
         "{}/{}",
