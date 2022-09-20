@@ -56,7 +56,8 @@ async fn create_app() -> Router {
     let api_routes = Router::new()
         .nest("/users", routes::user::create_route())
         .nest("/auth", routes::auth::create_route())
-        .nest("/models", routes::model::create_route());
+        .nest("/models", routes::model::create_route())
+        .nest("/warnings", routes::warning::create_route());
 
     Router::new()
         .route(

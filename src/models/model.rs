@@ -38,7 +38,7 @@ pub struct ModelCreate {
 
 #[derive(Serialize, sqlx::FromRow)]
 pub struct ModelUser {
-    id: i32,
+    pub id: i32,
     name: String,
     description: Option<String>,
     duration: i32,
