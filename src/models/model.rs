@@ -62,6 +62,7 @@ pub struct ModelUpload {
 }
 
 impl Model {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         name: String,
         description: Option<String>,
