@@ -27,7 +27,7 @@ pub struct UserList {
     pub id: i32,
     email: String,
     username: String,
-    is_staff: Option<bool>,
+    pub is_staff: Option<bool>,
     #[serde_as(as = "NoneAsEmptyString")]
     pub avatar: Option<String>,
 }

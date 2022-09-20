@@ -1,15 +1,17 @@
 use crate::{
     errors::AppError,
-    files::upload,
+    files::{delete_upload, upload},
     models::{
         auth::Claims,
         model::{Model, ModelCreate, ModelUpload, ModelUser},
+        user::User,
     },
     pagination::Pagination,
     routes::JsonCreate,
 };
 use axum::{
     extract::{ContentLengthLimit, Multipart, Path, Query},
+    http::StatusCode,
     routing::{get, post},
     Json, Router,
 };
@@ -19,7 +21,7 @@ use serde::Serialize;
 pub fn create_route() -> Router {
     Router::new()
         .route("/", get(list_models).post(create_model))
-        .route("/:id", get(get_model))
+        .route("/:id", get(get_model).delete(delete_model))
         .route("/:id/upload", post(upload_model_file))
 }
 
@@ -94,4 +96,33 @@ async fn upload_model_file(
         }
         Err(e) => Err(e),
     }
+}
+
+/// The owner or a staffer can delete a model
+async fn delete_model(claims: Claims, Path(model_id): Path<i32>) -> Result<StatusCode, AppError> {
+    let model = match Model::find_by_id(model_id).await {
+        Ok(model) => model,
+        Err(_) => {
+            return Err(AppError::NotFound("Model not found".to_string()));
+        }
+    };
+
+    let user = User::find_by_id(claims.user_id).await?;
+
+    let uploads: Vec<String> = model.upload_paths().await.unwrap();
+
+    if model.author_id() != user.id {
+        if !user.is_staff.unwrap() {
+            return Err(AppError::Unauthorized);
+        }
+    }
+
+    // If the model has been deleted, remove all old uploads from the file system
+    if Model::delete(model_id).await.is_ok() {
+        uploads
+            .iter()
+            .for_each(|path: &String| delete_upload(path).unwrap_or_default());
+    }
+
+    Ok(StatusCode::NO_CONTENT)
 }

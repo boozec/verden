@@ -144,7 +144,7 @@ impl Model {
     /// List all models
     pub async fn list(page: i64) -> Result<Vec<ModelUser>, AppError> {
         let pool = unsafe { get_client() };
-        let rows: Vec<ModelUser>= sqlx::query_as(
+        let rows: Vec<ModelUser> = sqlx::query_as(
             r#"
             SELECT
                 models.*,
@@ -165,6 +165,22 @@ impl Model {
         Ok(rows)
     }
 
+    /// Delete a model
+    pub async fn delete(model_id: i32) -> Result<(), AppError> {
+        let pool = unsafe { get_client() };
+
+        sqlx::query(
+            r#"
+            DELETE FROM models WHERE id = $1
+            "#,
+        )
+        .bind(model_id)
+        .execute(pool)
+        .await?;
+
+        Ok(())
+    }
+
     /// Return the number of models.
     pub async fn count() -> Result<i64, AppError> {
         let pool = unsafe { get_client() };
@@ -183,6 +199,23 @@ impl ModelUser {
             Some(json) => json.get("id").unwrap().clone(),
             None => json!(0),
         }
+    }
+
+    pub async fn upload_paths(&self) -> Option<Vec<String>> {
+        if self.uploads.is_none() {
+            return None;
+        }
+
+        let uploads = ModelUpload::find_by_model(self.id)
+            .await
+            .unwrap_or_default();
+
+        let paths = uploads
+            .iter()
+            .map(|x| x.filepath.clone())
+            .collect::<Vec<String>>();
+
+        return Some(paths);
     }
 }
 
@@ -212,6 +245,22 @@ impl ModelUpload {
         .bind(file.model_id)
         .bind(file.created)
         .fetch_one(pool)
+        .await?;
+
+        Ok(rec)
+    }
+
+    /// Find all paths of a model
+    pub async fn find_by_model(model_id: i32) -> Result<Vec<ModelUpload>, AppError> {
+        let pool = unsafe { get_client() };
+
+        let rec: Vec<ModelUpload> = sqlx::query_as(
+            r#"
+                SELECT * FROM uploads WHERE model_id = $1
+            "#,
+        )
+        .bind(model_id)
+        .fetch_all(pool)
         .await?;
 
         Ok(rec)
