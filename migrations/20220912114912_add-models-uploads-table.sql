@@ -1,6 +1,6 @@
 CREATE TABLE uploads (
     id SERIAL PRIMARY KEY,
-    model_id INTEGER REFERENCES models(id) NOT NULL,
+    model_id INTEGER REFERENCES models(id) ON DELETE CASCADE NOT NULL,
     filepath VARCHAR NOT NULL,
     created TIMESTAMP NOT NULL
 );
