@@ -1,10 +1,12 @@
-use crate::errors::AppError;
-use crate::files::{delete_upload, upload};
-use crate::models::{
-    auth::Claims,
-    user::{User, UserList},
+use crate::{
+    errors::AppError,
+    files::{delete_upload, upload},
+    models::{
+        auth::Claims,
+        user::{User, UserList},
+    },
+    pagination::Pagination,
 };
-use crate::pagination::Pagination;
 use axum::{
     extract::{ContentLengthLimit, Multipart, Path, Query},
     routing::{get, put},

@@ -1,5 +1,4 @@
-use crate::config::CONFIG;
-use crate::errors::AppError;
+use crate::{config::CONFIG, errors::AppError};
 use axum::{
     extract::{Multipart, Path},
     http::header::{HeaderMap, HeaderName, HeaderValue},

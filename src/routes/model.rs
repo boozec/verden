@@ -1,11 +1,13 @@
-use crate::errors::AppError;
-use crate::files::upload;
-use crate::models::{
-    auth::Claims,
-    model::{Model, ModelCreate, ModelUpload, ModelUser},
+use crate::{
+    errors::AppError,
+    files::upload,
+    models::{
+        auth::Claims,
+        model::{Model, ModelCreate, ModelUpload, ModelUser},
+    },
+    pagination::Pagination,
+    routes::JsonCreate,
 };
-use crate::pagination::Pagination;
-use crate::routes::JsonCreate;
 use axum::{
     extract::{ContentLengthLimit, Multipart, Path, Query},
     routing::{get, post},

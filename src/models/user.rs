@@ -1,6 +1,4 @@
-use crate::config::CONFIG;
-use crate::db::get_client;
-use crate::errors::AppError;
+use crate::{config::CONFIG, db::get_client, errors::AppError};
 
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, NoneAsEmptyString};

@@ -1,9 +1,11 @@
-use crate::errors::AppError;
-use crate::models::{
-    auth::{AuthBody, Claims, LoginCredentials, SignUpForm},
-    user::User,
+use crate::{
+    errors::AppError,
+    models::{
+        auth::{AuthBody, Claims, LoginCredentials, SignUpForm},
+        user::User,
+    },
+    routes::JsonCreate,
 };
-use crate::routes::JsonCreate;
 use axum::{routing::post, Json, Router};
 
 /// Create routes for `/v1/auth/` namespace

@@ -1,7 +1,4 @@
-use crate::config::CONFIG;
-use crate::db::get_client;
-
-use crate::errors::AppError;
+use crate::{config::CONFIG, db::get_client, errors::AppError};
 use serde_json::json;
 use sqlx::types::JsonValue;
 use sqlx::Row;
