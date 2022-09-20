@@ -3,7 +3,7 @@ use chrono::{Local, NaiveDateTime};
 use serde::{Deserialize, Serialize};
 use sqlx::Row;
 
-/// Model for models.
+/// Model for warnings.
 #[derive(Deserialize, Serialize, sqlx::FromRow)]
 pub struct Warning {
     id: i32,
