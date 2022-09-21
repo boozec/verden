@@ -1,4 +1,4 @@
-use crate::{config::CONFIG, db::get_client, errors::AppError};
+use crate::{config::CONFIG, db::get_client, errors::AppError, json::number_from_string};
 use serde_json::json;
 use sqlx::types::JsonValue;
 use sqlx::Row;
@@ -29,8 +29,11 @@ pub struct Model {
 pub struct ModelCreate {
     pub name: String,
     pub description: Option<String>,
+    #[serde(deserialize_with = "number_from_string")]
     pub duration: f64,
+    #[serde(deserialize_with = "number_from_string")]
     pub height: f64,
+    #[serde(deserialize_with = "number_from_string")]
     pub weight: f64,
     pub printer: Option<String>,
     pub material: Option<String>,

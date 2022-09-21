@@ -2,6 +2,7 @@ mod config;
 mod db;
 mod errors;
 mod files;
+mod json;
 mod logger;
 mod models;
 mod pagination;
