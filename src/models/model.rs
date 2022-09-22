@@ -59,8 +59,8 @@ pub struct ModelUser {
 #[derive(Deserialize, Serialize, sqlx::FromRow)]
 pub struct ModelUpload {
     id: i32,
-    model_id: i32,
-    filepath: String,
+    pub model_id: i32,
+    pub filepath: String,
     created: NaiveDateTime,
 }
 
@@ -269,5 +269,37 @@ impl ModelUpload {
         .await?;
 
         Ok(rec)
+    }
+
+    /// Returns the model upload with id = `upload_id`
+    pub async fn find_by_id(id: i32) -> Result<ModelUpload, AppError> {
+        let pool = unsafe { get_client() };
+
+        let rec: ModelUpload = sqlx::query_as(
+            r#"
+                SELECT * FROM uploads WHERE id = $1
+            "#,
+        )
+        .bind(id)
+        .fetch_one(pool)
+        .await?;
+
+        Ok(rec)
+    }
+
+    /// Delete a model upload
+    pub async fn delete(upload_id: i32) -> Result<(), AppError> {
+        let pool = unsafe { get_client() };
+
+        sqlx::query(
+            r#"
+            DELETE FROM uploads WHERE id = $1
+            "#,
+        )
+        .bind(upload_id)
+        .execute(pool)
+        .await?;
+
+        Ok(())
     }
 }

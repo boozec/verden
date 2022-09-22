@@ -12,7 +12,7 @@ use crate::{
 use axum::{
     extract::{ContentLengthLimit, Multipart, Path, Query},
     http::StatusCode,
-    routing::{get, post},
+    routing::{delete, get, post},
     Json, Router,
 };
 use serde::Serialize;
@@ -23,6 +23,7 @@ pub fn create_route() -> Router {
         .route("/", get(list_models).post(create_model))
         .route("/:id", get(get_model).delete(delete_model))
         .route("/:id/upload", post(upload_model_file))
+        .route("/:id/upload/:uid", delete(delete_model_file))
 }
 
 #[derive(Serialize)]
@@ -123,4 +124,46 @@ async fn delete_model(claims: Claims, Path(model_id): Path<i32>) -> Result<Statu
     }
 
     Ok(StatusCode::NO_CONTENT)
+}
+
+/// The owner or a staffer can delete a model upload
+async fn delete_model_file(
+    claims: Claims,
+    Path(model_id): Path<i32>,
+    Path(upload_id): Path<i32>,
+) -> Result<StatusCode, AppError> {
+    let model = match Model::find_by_id(model_id).await {
+        Ok(model) => model,
+        Err(_) => {
+            return Err(AppError::NotFound("Model not found".to_string()));
+        }
+    };
+
+    let user = User::find_by_id(claims.user_id).await?;
+
+    if !(model.author_id() == user.id || user.is_staff.unwrap()) {
+        return Err(AppError::Unauthorized);
+    }
+
+    let upload = match ModelUpload::find_by_id(upload_id).await {
+        Ok(upload) => upload,
+        Err(_) => {
+            return Err(AppError::NotFound("Upload not found".to_string()));
+        }
+    };
+
+    if upload.model_id != model.id {
+        return Err(AppError::NotFound("Upload not found".to_string()));
+    }
+
+    let filepath = upload.filepath.clone();
+
+    match ModelUpload::delete(upload_id).await {
+        Ok(_) => {
+            delete_upload(&filepath)?;
+
+            return Ok(StatusCode::NO_CONTENT);
+        }
+        Err(e) => Err(e),
+    }
 }
