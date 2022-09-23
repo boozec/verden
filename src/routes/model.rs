@@ -21,7 +21,7 @@ use serde::Serialize;
 pub fn create_route() -> Router {
     Router::new()
         .route("/", get(list_models).post(create_model))
-        .route("/:id", get(get_model).delete(delete_model))
+        .route("/:id", get(get_model).delete(delete_model).put(edit_model))
         .route("/:id/upload", post(upload_model_file))
         .route("/:id/upload/:uid", delete(delete_model_file))
 }
@@ -70,6 +70,66 @@ async fn get_model(Path(model_id): Path<i32>) -> Result<Json<ModelUser>, AppErro
     }
 }
 
+/// The owner or a staffer can delete a model
+async fn delete_model(claims: Claims, Path(model_id): Path<i32>) -> Result<StatusCode, AppError> {
+    let model = match Model::find_by_id(model_id).await {
+        Ok(model) => model,
+        Err(_) => {
+            return Err(AppError::NotFound("Model not found".to_string()));
+        }
+    };
+
+    let user = User::find_by_id(claims.user_id).await?;
+
+    let uploads: Vec<String> = model.list_upload_filepaths().await.unwrap();
+
+    if !(model.author_id() == user.id || user.is_staff.unwrap()) {
+        return Err(AppError::Unauthorized);
+    }
+
+    // If the model has been deleted, remove all old uploads from the file system
+    if Model::delete(model_id).await.is_ok() {
+        uploads
+            .iter()
+            .for_each(|path: &String| delete_upload(path).unwrap_or_default());
+    }
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
+/// The owner or a staffer can edit a model
+async fn edit_model(
+    Json(payload): Json<ModelCreate>,
+    claims: Claims,
+    Path(model_id): Path<i32>,
+) -> Result<Json<ModelUser>, AppError> {
+    let model = match Model::find_by_id(model_id).await {
+        Ok(model) => model,
+        Err(_) => {
+            return Err(AppError::NotFound("Model not found".to_string()));
+        }
+    };
+
+    let user = User::find_by_id(claims.user_id).await?;
+
+    if !(model.author_id() == user.id || user.is_staff.unwrap()) {
+        return Err(AppError::Unauthorized);
+    }
+
+    let model_body = Model::new(
+        payload.name,
+        payload.description,
+        payload.duration,
+        payload.height,
+        payload.weight,
+        payload.printer,
+        payload.material,
+        claims.user_id,
+    );
+    Model::edit(model.id, model_body).await?;
+    Ok(Json(model))
+}
+
 /// Upload a file for a model
 async fn upload_model_file(
     claims: Claims,
@@ -97,33 +157,6 @@ async fn upload_model_file(
         }
         Err(e) => Err(e),
     }
-}
-
-/// The owner or a staffer can delete a model
-async fn delete_model(claims: Claims, Path(model_id): Path<i32>) -> Result<StatusCode, AppError> {
-    let model = match Model::find_by_id(model_id).await {
-        Ok(model) => model,
-        Err(_) => {
-            return Err(AppError::NotFound("Model not found".to_string()));
-        }
-    };
-
-    let user = User::find_by_id(claims.user_id).await?;
-
-    let uploads: Vec<String> = model.list_upload_filepaths().await.unwrap();
-
-    if !(model.author_id() == user.id || user.is_staff.unwrap()) {
-        return Err(AppError::Unauthorized);
-    }
-
-    // If the model has been deleted, remove all old uploads from the file system
-    if Model::delete(model_id).await.is_ok() {
-        uploads
-            .iter()
-            .for_each(|path: &String| delete_upload(path).unwrap_or_default());
-    }
-
-    Ok(StatusCode::NO_CONTENT)
 }
 
 /// The owner or a staffer can delete a model upload

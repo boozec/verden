@@ -122,6 +122,35 @@ impl Model {
         Ok(rec)
     }
 
+    /// Edit a model
+    pub async fn edit(id: i32, model: Model) -> Result<Model, AppError> {
+        let pool = unsafe { get_client() };
+
+        model
+            .validate()
+            .map_err(|error| AppError::BadRequest(error.to_string()))?;
+
+        let rec: Model = sqlx::query_as(
+            r#"
+                UPDATE models SET name = $1, description = $2, duration = $3, height = $4, weight = $5, printer = $6, material = $7, updated = $8
+                WHERE id = $9
+                RETURNING *
+            "#)
+            .bind(model.name)
+            .bind(model.description)
+            .bind(model.duration)
+            .bind(model.height)
+            .bind(model.weight)
+            .bind(model.printer)
+            .bind(model.material)
+            .bind(model.updated)
+            .bind(id)
+        .fetch_one(pool)
+        .await?;
+
+        Ok(rec)
+    }
+
     /// Returns the model with id = `model_id`
     pub async fn find_by_id(model_id: i32) -> Result<ModelUser, AppError> {
         let pool = unsafe { get_client() };
