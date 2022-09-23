@@ -195,7 +195,7 @@ async fn delete_model_file(
         Ok(_) => {
             delete_upload(&filepath)?;
 
-            return Ok(StatusCode::NO_CONTENT);
+            Ok(StatusCode::NO_CONTENT)
         }
         Err(e) => Err(e),
     }
