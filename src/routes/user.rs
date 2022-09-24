@@ -5,15 +5,13 @@ use crate::{
         auth::Claims,
         user::{User, UserList},
     },
-    pagination::Pagination,
-    routes::model::ModelPagination,
+    pagination::{ModelPagination, Pagination, UserPagination},
 };
 use axum::{
     extract::{ContentLengthLimit, Multipart, Path, Query},
     routing::{get, put},
     Json, Router,
 };
-use serde::Serialize;
 
 /// Create routes for `/v1/users/` namespace
 pub fn create_route() -> Router {
@@ -23,12 +21,6 @@ pub fn create_route() -> Router {
         .route("/me/avatar", put(edit_my_avatar).delete(delete_my_avatar))
         .route("/:id", get(get_user))
         .route("/:id/models", get(get_user_models))
-}
-
-#[derive(Serialize)]
-struct UserPagination {
-    count: i64,
-    results: Vec<UserList>,
 }
 
 /// List users. Checks Authorization token

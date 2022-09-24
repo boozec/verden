@@ -6,7 +6,7 @@ use crate::{
         model::{Model, ModelCreate, ModelUpload, ModelUser},
         user::User,
     },
-    pagination::Pagination,
+    pagination::{ModelPagination, Pagination},
     routes::JsonCreate,
 };
 use axum::{
@@ -15,7 +15,6 @@ use axum::{
     routing::{delete, get, post},
     Json, Router,
 };
-use serde::Serialize;
 
 /// Create routes for `/v1/models/` namespace
 pub fn create_route() -> Router {
@@ -24,12 +23,6 @@ pub fn create_route() -> Router {
         .route("/:id", get(get_model).delete(delete_model).put(edit_model))
         .route("/:id/upload", post(upload_model_file))
         .route("/:id/upload/:uid", delete(delete_model_file))
-}
-
-#[derive(Serialize)]
-pub struct ModelPagination {
-    pub count: i64,
-    pub results: Vec<ModelUser>,
 }
 
 /// List models.
