@@ -162,8 +162,7 @@ async fn upload_model_file(
 /// The owner or a staffer can delete a model upload
 async fn delete_model_file(
     claims: Claims,
-    Path(model_id): Path<i32>,
-    Path(upload_id): Path<i32>,
+    Path((model_id, upload_id)): Path<(i32, i32)>,
 ) -> Result<StatusCode, AppError> {
     let model = match Model::find_by_id(model_id).await {
         Ok(model) => model,
