@@ -65,7 +65,7 @@ impl User {
             r#"
                 INSERT INTO users (name, email, username, password)
                 VALUES ( $1, $2, $3, $4)
-                RETURNING id, email, username, is_staff, avatar
+                RETURNING id, name, email, username, is_staff, avatar
             "#,
         )
         .bind(user.name)
