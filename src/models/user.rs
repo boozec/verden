@@ -1,4 +1,9 @@
-use crate::{config::CONFIG, db::get_client, errors::AppError};
+use crate::{
+    config::CONFIG,
+    db::get_client,
+    errors::AppError,
+    models::model::{Model, ModelUser},
+};
 
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, NoneAsEmptyString};
@@ -170,7 +175,7 @@ impl User {
 }
 
 impl UserList {
-    // Edit an user
+    /// Edit an user
     pub async fn edit_avatar(&mut self, avatar: Option<String>) -> Result<(), AppError> {
         let pool = unsafe { get_client() };
         sqlx::query(
@@ -186,5 +191,15 @@ impl UserList {
         self.avatar = avatar;
 
         Ok(())
+    }
+
+    /// Get all models created by an user
+    pub async fn get_models(&self, page: i64) -> Result<Vec<ModelUser>, AppError> {
+        Model::list_from_author(page, self.id).await
+    }
+
+    /// Returns the number of models for an user
+    pub async fn count_models(&self) -> Result<i64, AppError> {
+        Model::count_filter_by_author(self.id).await
     }
 }

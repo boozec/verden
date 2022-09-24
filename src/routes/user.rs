@@ -6,6 +6,7 @@ use crate::{
         user::{User, UserList},
     },
     pagination::Pagination,
+    routes::model::ModelPagination,
 };
 use axum::{
     extract::{ContentLengthLimit, Multipart, Path, Query},
@@ -21,6 +22,7 @@ pub fn create_route() -> Router {
         .route("/me", get(get_me))
         .route("/me/avatar", put(edit_my_avatar).delete(delete_my_avatar))
         .route("/:id", get(get_user))
+        .route("/:id/models", get(get_user_models))
 }
 
 #[derive(Serialize)]
@@ -107,4 +109,23 @@ async fn get_user(Path(user_id): Path<i32>) -> Result<Json<UserList>, AppError> 
         Ok(user) => Ok(Json(user)),
         Err(_) => Err(AppError::NotFound("User not found".to_string())),
     }
+}
+
+/// Get user models list
+async fn get_user_models(
+    Path(user_id): Path<i32>,
+    pagination: Query<Pagination>,
+) -> Result<Json<ModelPagination>, AppError> {
+    let user = match User::find_by_id(user_id).await {
+        Ok(user) => user,
+        Err(_) => {
+            return Err(AppError::NotFound("User not found".to_string()));
+        }
+    };
+
+    let page = pagination.0.page.unwrap_or_default();
+    let results = user.get_models(page).await?;
+    let count = user.count_models().await?;
+
+    Ok(Json(ModelPagination { count, results }))
 }

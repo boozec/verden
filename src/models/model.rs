@@ -198,6 +198,32 @@ impl Model {
         Ok(rows)
     }
 
+    /// List author's models
+    pub async fn list_from_author(page: i64, author: i32) -> Result<Vec<ModelUser>, AppError> {
+        let pool = unsafe { get_client() };
+        let rows: Vec<ModelUser> = sqlx::query_as(
+            r#"
+            SELECT
+                models.*,
+                json_build_object('id', users.id, 'email', users.email, 'username', users.username, 'is_staff', users.is_staff, 'avatar', users.avatar) as author,
+                json_agg(uploads.*) filter (where uploads.* is not null) as uploads
+            FROM models
+            JOIN users ON users.id = models.author_id
+            LEFT JOIN uploads ON uploads.model_id = models.id
+            WHERE author_id = $1
+            GROUP BY models.id, users.id
+            ORDER BY id DESC
+            LIMIT $2 OFFSET $3
+            "#)
+        .bind(author)
+        .bind(CONFIG.page_limit)
+        .bind(CONFIG.page_limit * page)
+        .fetch_all(pool)
+        .await?;
+
+        Ok(rows)
+    }
+
     /// Delete a model
     pub async fn delete(model_id: i32) -> Result<(), AppError> {
         let pool = unsafe { get_client() };
@@ -218,6 +244,18 @@ impl Model {
     pub async fn count() -> Result<i64, AppError> {
         let pool = unsafe { get_client() };
         let cursor = sqlx::query(r#"SELECT COUNT(id) as count FROM models"#)
+            .fetch_one(pool)
+            .await?;
+
+        let count: i64 = cursor.try_get(0).unwrap();
+        Ok(count)
+    }
+
+    /// Return the number of author models
+    pub async fn count_filter_by_author(author: i32) -> Result<i64, AppError> {
+        let pool = unsafe { get_client() };
+        let cursor = sqlx::query(r#"SELECT COUNT(id) as count FROM models WHERE author_id = $1"#)
+            .bind(author)
             .fetch_one(pool)
             .await?;
 

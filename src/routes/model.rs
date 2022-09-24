@@ -27,9 +27,9 @@ pub fn create_route() -> Router {
 }
 
 #[derive(Serialize)]
-struct ModelPagination {
-    count: i64,
-    results: Vec<ModelUser>,
+pub struct ModelPagination {
+    pub count: i64,
+    pub results: Vec<ModelUser>,
 }
 
 /// List models.
