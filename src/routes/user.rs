@@ -101,8 +101,8 @@ async fn delete_my_avatar(claims: Claims) -> Result<Json<UserList>, AppError> {
     Ok(Json(user))
 }
 
-/// Get an user with id = `user_id`. Checks Authorization token
-async fn get_user(Path(user_id): Path<i32>, _: Claims) -> Result<Json<UserList>, AppError> {
+/// Get an user with id = `user_id`
+async fn get_user(Path(user_id): Path<i32>) -> Result<Json<UserList>, AppError> {
     match User::find_by_id(user_id).await {
         Ok(user) => Ok(Json(user)),
         Err(_) => Err(AppError::NotFound("User not found".to_string())),
