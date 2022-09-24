@@ -14,6 +14,7 @@ use validator::Validate;
 #[derive(Deserialize, Serialize, Validate)]
 pub struct User {
     id: i32,
+    name: String,
     #[validate(length(min = 4, message = "Can not be empty"))]
     email: String,
     #[validate(length(min = 2, message = "Can not be empty"))]
@@ -28,8 +29,8 @@ pub struct User {
 #[serde_as]
 #[derive(Deserialize, Serialize, sqlx::FromRow)]
 pub struct UserList {
-    // It is public because it used by `Claims` creation
     pub id: i32,
+    name: String,
     email: String,
     username: String,
     pub is_staff: Option<bool>,
@@ -39,9 +40,10 @@ pub struct UserList {
 
 impl User {
     /// By default an user has id = 0. It is not created yet
-    pub fn new(email: String, username: String, password: String) -> Self {
+    pub fn new(name: String, email: String, username: String, password: String) -> Self {
         Self {
             id: 0,
+            name,
             email,
             username,
             password,
@@ -61,11 +63,12 @@ impl User {
 
         let rec: UserList = sqlx::query_as(
             r#"
-                INSERT INTO users (email, username, password)
-                VALUES ( $1, $2, $3)
+                INSERT INTO users (name, email, username, password)
+                VALUES ( $1, $2, $3, $4)
                 RETURNING id, email, username, is_staff, avatar
             "#,
         )
+        .bind(user.name)
         .bind(user.email)
         .bind(user.username)
         .bind(crypted_password)
@@ -83,7 +86,7 @@ impl User {
 
         let rec: UserList = sqlx::query_as(
             r#"
-                SELECT id, email, username, is_staff, avatar FROM "users"
+                SELECT id, name, email, username, is_staff, avatar FROM "users"
                 WHERE username = $1 AND password = $2
             "#,
         )
@@ -101,7 +104,7 @@ impl User {
 
         let rec: UserList = sqlx::query_as(
             r#"
-                SELECT id, email, username, is_staff, avatar FROM "users"
+                SELECT id, name, email, username, is_staff, avatar FROM "users"
                 WHERE id = $1
             "#,
         )
@@ -116,7 +119,7 @@ impl User {
     pub async fn list(page: i64) -> Result<Vec<UserList>, AppError> {
         let pool = unsafe { get_client() };
         let rows: Vec<UserList> = sqlx::query_as(
-            r#"SELECT id, email, username, is_staff, avatar FROM users
+            r#"SELECT id, name, email, username, is_staff, avatar FROM users
             LIMIT $1 OFFSET $2
             "#,
         )

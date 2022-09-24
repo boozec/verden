@@ -18,7 +18,7 @@ pub fn create_route() -> Router {
 /// Make login. Check if a user with the email and password passed in request body exists into the
 /// database
 async fn make_login(Json(payload): Json<LoginCredentials>) -> Result<Json<AuthBody>, AppError> {
-    let user = User::new(String::new(), payload.username, payload.password);
+    let user = User::new(String::new(), String::new(), payload.username, payload.password);
     match User::find(user).await {
         Ok(user) => {
             let claims = Claims::new(user.id);
@@ -49,7 +49,12 @@ async fn signup(Json(payload): Json<SignUpForm>) -> Result<JsonCreate<AuthBody>,
         ));
     }
 
-    let user = User::new(payload.email, payload.username, payload.password1);
+    let user = User::new(
+        payload.name,
+        payload.email,
+        payload.username,
+        payload.password1,
+    );
     let user = User::create(user).await?;
 
     let claims = Claims::new(user.id);

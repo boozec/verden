@@ -42,6 +42,7 @@ pub struct LoginCredentials {
 /// Paylod used for user creation
 #[derive(Deserialize)]
 pub struct SignUpForm {
+    pub name: String,
     pub email: String,
     pub username: String,
     pub password1: String,
