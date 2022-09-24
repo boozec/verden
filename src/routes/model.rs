@@ -147,7 +147,18 @@ async fn upload_model_file(
         return Err(AppError::Unauthorized);
     }
 
-    let allowed_extensions = vec!["stl", "obj", "png", "jpg", "jpeg", "gif", "webp", "blend"];
+    let allowed_extensions = vec![
+        "stl",
+        "obj",
+        "png",
+        "jpg",
+        "jpeg",
+        "gif",
+        "webp",
+        "blend",
+        "octet-stream",
+        "sla",
+    ];
 
     match upload(multipart, allowed_extensions, None).await {
         Ok(saved_file) => {
