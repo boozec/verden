@@ -25,14 +25,24 @@ pub struct User {
     avatar: Option<String>,
 }
 
+/// Paylod used for user editing
+#[derive(Deserialize)]
+pub struct UserEdit {
+    pub name: String,
+    pub email: String,
+    pub username: String,
+}
+
 /// Response used to print a user (or a users list)
 #[serde_as]
-#[derive(Deserialize, Serialize, sqlx::FromRow)]
+#[derive(Deserialize, Serialize, sqlx::FromRow, Validate)]
 pub struct UserList {
     pub id: i32,
-    name: String,
-    email: String,
-    username: String,
+    pub name: String,
+    #[validate(length(min = 4, message = "Can not be empty"))]
+    pub email: String,
+    #[validate(length(min = 2, message = "Can not be empty"))]
+    pub username: String,
     pub is_staff: Option<bool>,
     #[serde_as(as = "NoneAsEmptyString")]
     pub avatar: Option<String>,
@@ -178,7 +188,7 @@ impl User {
 }
 
 impl UserList {
-    /// Edit an user
+    /// Edit an user avatar
     pub async fn edit_avatar(&mut self, avatar: Option<String>) -> Result<(), AppError> {
         let pool = unsafe { get_client() };
         sqlx::query(
@@ -192,6 +202,34 @@ impl UserList {
         .await?;
 
         self.avatar = avatar;
+
+        Ok(())
+    }
+
+    /// Edit an user
+    pub async fn edit(&mut self, payload: UserEdit) -> Result<(), AppError> {
+        let pool = unsafe { get_client() };
+
+        // Make assignments before the `sqlx::query()` so to perform validation.
+        // If the `AppError::BadRequest` is raised, the query (and then the update) will be skipped
+        self.name = payload.name.clone();
+        self.username = payload.username.clone();
+        self.email = payload.email.clone();
+
+        self.validate()
+            .map_err(|error| AppError::BadRequest(error.to_string()))?;
+
+        sqlx::query(
+            r#"
+            UPDATE users SET name = $1, username = $2, email = $3 WHERE id = $4
+            "#,
+        )
+        .bind(&payload.name)
+        .bind(&payload.username)
+        .bind(&payload.email)
+        .bind(self.id)
+        .execute(pool)
+        .await?;
 
         Ok(())
     }

@@ -119,6 +119,8 @@ async fn edit_model(
         payload.material,
         claims.user_id,
     );
+
+    // NOTE: can we edit this as same as `user.edit_avatar()`?
     Model::edit(model.id, model_body).await?;
     Ok(Json(model))
 }

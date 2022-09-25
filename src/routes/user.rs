@@ -3,7 +3,7 @@ use crate::{
     files::{delete_upload, upload},
     models::{
         auth::Claims,
-        user::{User, UserList},
+        user::{User, UserEdit, UserList},
     },
     pagination::{ModelPagination, Pagination, UserPagination},
 };
@@ -19,7 +19,7 @@ pub fn create_route() -> Router {
         .route("/", get(list_users))
         .route("/me", get(get_me))
         .route("/me/avatar", put(edit_my_avatar).delete(delete_my_avatar))
-        .route("/:id", get(get_user))
+        .route("/:id", get(get_user).put(edit_user))
         .route("/:id/models", get(get_user_models))
 }
 
@@ -101,6 +101,52 @@ async fn get_user(Path(user_id): Path<i32>) -> Result<Json<UserList>, AppError> 
         Ok(user) => Ok(Json(user)),
         Err(_) => Err(AppError::NotFound("User not found".to_string())),
     }
+}
+
+/// Edit an user with id = `user_id`. Only staffers and owner of that account can perform this
+/// action
+async fn edit_user(
+    Path(user_id): Path<i32>,
+    Json(payload): Json<UserEdit>,
+    claims: Claims,
+) -> Result<Json<UserList>, AppError> {
+    let mut user = match User::find_by_id(user_id).await {
+        Ok(user) => user,
+        Err(_) => {
+            return Err(AppError::NotFound("User not found".to_string()));
+        }
+    };
+
+    let claimed = match User::find_by_id(claims.user_id).await {
+        Ok(user) => user,
+        Err(_) => {
+            return Err(AppError::NotFound("User not found".to_string()));
+        }
+    };
+
+    if !(claimed.id == user.id || claimed.is_staff.unwrap()) {
+        return Err(AppError::Unauthorized);
+    }
+
+    if user.email != payload.email {
+        if User::email_has_taken(&payload.email).await? {
+            return Err(AppError::BadRequest(
+                "An user with this email already exists".to_string(),
+            ));
+        }
+    }
+
+    if user.username != payload.username {
+        if User::username_has_taken(&payload.username).await? {
+            return Err(AppError::BadRequest(
+                "An user with this username already exists".to_string(),
+            ));
+        }
+    }
+
+    user.edit(payload).await?;
+
+    Ok(Json(user))
 }
 
 /// Get user models list
