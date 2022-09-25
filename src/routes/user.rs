@@ -117,31 +117,31 @@ async fn edit_user(
         }
     };
 
-    let claimed = match User::find_by_id(claims.user_id).await {
-        Ok(user) => user,
-        Err(_) => {
-            return Err(AppError::NotFound("User not found".to_string()));
-        }
-    };
-
-    if !(claimed.id == user.id || claimed.is_staff.unwrap()) {
-        return Err(AppError::Unauthorized);
+    // If the user of the access token is different than the user they want to edit, checks if the
+    // first user is an admin
+    if claims.user_id != user.id {
+        match User::find_by_id(claims.user_id).await {
+            Ok(user) => {
+                if !(user.is_staff.unwrap()) {
+                    return Err(AppError::Unauthorized);
+                }
+            }
+            Err(_) => {
+                return Err(AppError::NotFound("User not found".to_string()));
+            }
+        };
     }
 
-    if user.email != payload.email {
-        if User::email_has_taken(&payload.email).await? {
-            return Err(AppError::BadRequest(
-                "An user with this email already exists".to_string(),
-            ));
-        }
+    if user.email != payload.email && User::email_has_taken(&payload.email).await? {
+        return Err(AppError::BadRequest(
+            "An user with this email already exists".to_string(),
+        ));
     }
 
-    if user.username != payload.username {
-        if User::username_has_taken(&payload.username).await? {
-            return Err(AppError::BadRequest(
-                "An user with this username already exists".to_string(),
-            ));
-        }
+    if user.username != payload.username && User::username_has_taken(&payload.username).await? {
+        return Err(AppError::BadRequest(
+            "An user with this username already exists".to_string(),
+        ));
     }
 
     user.edit(payload).await?;
