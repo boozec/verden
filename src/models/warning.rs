@@ -3,32 +3,49 @@ use chrono::{Local, NaiveDateTime};
 use serde::{Deserialize, Serialize};
 use sqlx::types::JsonValue;
 use sqlx::Row;
+use std::convert::From;
 
 /// Model for warnings.
 #[derive(Deserialize, Serialize, sqlx::FromRow)]
 pub struct Warning {
-    id: i32,
-    user_id: Option<i32>,
-    model_id: Option<i32>,
-    resolved_by: Option<i32>,
-    note: String,
-    admin_note: String,
-    created: NaiveDateTime,
-    updated: NaiveDateTime,
+    pub id: i32,
+    pub user_id: Option<i32>,
+    pub model_id: Option<i32>,
+    pub resolved_by: Option<i32>,
+    pub note: String,
+    pub admin_note: String,
+    pub created: NaiveDateTime,
+    pub updated: NaiveDateTime,
 }
 
 #[derive(Serialize, sqlx::FromRow)]
 pub struct WarningUser {
-    id: i32,
-    user_id: Option<i32>,
-    model_id: Option<i32>,
-    resolved_by: Option<i32>,
-    note: String,
-    admin_note: String,
-    created: NaiveDateTime,
-    updated: NaiveDateTime,
+    pub id: i32,
+    pub user_id: Option<i32>,
+    pub model_id: Option<i32>,
+    pub resolved_by: Option<i32>,
+    pub note: String,
+    pub admin_note: String,
+    pub created: NaiveDateTime,
+    pub updated: NaiveDateTime,
     user: Option<JsonValue>,
     resolved: Option<JsonValue>,
+}
+
+/// Impl conversion from `WarningUser` to `Warning`
+impl From<WarningUser> for Warning {
+    fn from(item: WarningUser) -> Self {
+        Self {
+            id: item.id,
+            user_id: item.user_id,
+            model_id: item.model_id,
+            resolved_by: item.resolved_by,
+            note: item.note,
+            admin_note: item.admin_note,
+            created: item.created,
+            updated: item.created,
+        }
+    }
 }
 
 /// Payload used to create a new warning
@@ -36,6 +53,12 @@ pub struct WarningUser {
 pub struct WarningCreate {
     pub model_id: i32,
     pub note: String,
+}
+
+/// Payload used to edit a warning
+#[derive(Deserialize)]
+pub struct WarningEdit {
+    pub admin_note: String,
 }
 
 /// Payload used for warning filtering
@@ -105,6 +128,31 @@ impl Warning {
         };
 
         Ok(rows)
+    }
+
+    /// Returns the warning with id = `warning_id`
+    pub async fn find_by_id(warning_id: i32) -> Result<WarningUser, AppError> {
+        let pool = unsafe { get_client() };
+
+        let rec: WarningUser = sqlx::query_as(
+            r#"
+                SELECT
+                    warnings.*,
+                    json_build_object('id', users.id, 'name', users.name, 'email', users.email, 'username', users.username, 'is_staff', users.is_staff, 'avatar', users.avatar) as user,
+                    coalesce(r.data, '{}'::json) as resolved
+                FROM warnings
+                JOIN users ON users.id = warnings.user_id
+                LEFT JOIN (
+                    SELECT id, json_build_object('id', r.id, 'name', r.name, 'email', r.email, 'username', r.username, 'is_staff', r.is_staff, 'avatar', r.avatar) as data
+                    FROM users r
+                ) r ON r.id = warnings.resolved_by
+                WHERE warnings.id = $1
+            "#)
+        .bind(warning_id)
+        .fetch_one(pool)
+        .await?;
+
+        Ok(rec)
     }
 
     /// Return the number of warnings.
@@ -220,5 +268,30 @@ impl Warning {
 
         let count: i64 = cursor.try_get(0).unwrap();
         Ok(count)
+    }
+
+    /// Edit a warning
+    pub async fn edit(&mut self, resolver: i32, payload: WarningEdit) -> Result<(), AppError> {
+        let pool = unsafe { get_client() };
+
+        let now = Local::now().naive_utc();
+
+        sqlx::query(
+            r#"
+            UPDATE warnings SET admin_note = $1, resolved_by = $2, updated = $3 WHERE id = $4
+            "#,
+        )
+        .bind(&payload.admin_note)
+        .bind(resolver)
+        .bind(now)
+        .bind(self.id)
+        .execute(pool)
+        .await?;
+
+        self.admin_note = payload.admin_note;
+        self.resolved_by = Some(resolver);
+        self.updated = now;
+
+        Ok(())
     }
 }

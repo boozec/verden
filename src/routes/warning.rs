@@ -4,14 +4,14 @@ use crate::{
         auth::Claims,
         model::Model,
         user::User,
-        warning::{Warning, WarningCreate, WarningFilter, WarningFilterPayload},
+        warning::{Warning, WarningCreate, WarningEdit, WarningFilter, WarningFilterPayload},
     },
     pagination::{Pagination, WarningPagination},
     routes::JsonCreate,
 };
 use axum::{
-    extract::Query,
-    routing::{get, post},
+    extract::{Path, Query},
+    routing::{get, post, put},
     Json, Router,
 };
 
@@ -19,6 +19,7 @@ use axum::{
 pub fn create_route() -> Router {
     Router::new()
         .route("/", get(list_warnings).post(create_warning))
+        .route("/:id", put(edit_warning))
         .route("/filter", post(filter_warnings))
 }
 
@@ -52,7 +53,7 @@ async fn create_warning(
 ) -> Result<JsonCreate<Warning>, AppError> {
     let model = match Model::find_by_id(payload.model_id).await {
         Ok(model) => model,
-        Err(_) => return Err(AppError::NotFound("Model not found".to_string())),
+        Err(_) => return Err(AppError::NotFound("Report not found".to_string())),
     };
 
     let warning = Warning::new(claims.user_id, model.id, payload.note);
@@ -60,6 +61,30 @@ async fn create_warning(
     let warning_new = Warning::create(warning).await?;
 
     Ok(JsonCreate(warning_new))
+}
+
+/// Staffers can edit a warning
+async fn edit_warning(
+    Json(payload): Json<WarningEdit>,
+    claims: Claims,
+    Path(warning_id): Path<i32>,
+) -> Result<Json<Warning>, AppError> {
+    let mut warning: Warning = match Warning::find_by_id(warning_id).await {
+        Ok(warning) => warning.into(),
+        Err(_) => {
+            return Err(AppError::NotFound("Report not found".to_string()));
+        }
+    };
+
+    let user = User::find_by_id(claims.user_id).await?;
+
+    if !(user.is_staff.unwrap()) {
+        return Err(AppError::Unauthorized);
+    }
+
+    warning.edit(user.id, payload).await?;
+
+    Ok(Json(warning))
 }
 
 /// Apply a filter to warnings list
