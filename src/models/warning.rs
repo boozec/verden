@@ -1,6 +1,7 @@
 use crate::{config::CONFIG, db::get_client, errors::AppError};
 use chrono::{Local, NaiveDateTime};
 use serde::{Deserialize, Serialize};
+use sqlx::types::JsonValue;
 use sqlx::Row;
 
 /// Model for warnings.
@@ -14,6 +15,20 @@ pub struct Warning {
     admin_note: String,
     created: NaiveDateTime,
     updated: NaiveDateTime,
+}
+
+#[derive(Serialize, sqlx::FromRow)]
+pub struct WarningUser {
+    id: i32,
+    user_id: Option<i32>,
+    model_id: Option<i32>,
+    resolved_by: Option<i32>,
+    note: String,
+    admin_note: String,
+    created: NaiveDateTime,
+    updated: NaiveDateTime,
+    user: Option<JsonValue>,
+    resolved: Option<JsonValue>,
 }
 
 /// Payload used to create a new warning
@@ -53,16 +68,27 @@ impl Warning {
     }
 
     /// List all warnings. A staffer can see all the warnings, a user cannot
-    pub async fn list(page: i64, user_id: Option<i32>) -> Result<Vec<Warning>, AppError> {
+    pub async fn list(page: i64, user_id: Option<i32>) -> Result<Vec<WarningUser>, AppError> {
         let pool = unsafe { get_client() };
-        let rows: Vec<Warning> = match user_id {
+        let query = r#"
+                    SELECT
+                        warnings.*,
+                        json_build_object('id', users.id, 'name', users.name, 'email', users.email, 'username', users.username, 'is_staff', users.is_staff, 'avatar', users.avatar) as user,
+                        coalesce(r.data, '{}'::json) as resolved
+                    FROM warnings
+                    JOIN users ON users.id = warnings.user_id
+                    LEFT JOIN (
+                        SELECT id, json_build_object('id', r.id, 'name', r.name, 'email', r.email, 'username', r.username, 'is_staff', r.is_staff, 'avatar', r.avatar) as data
+                        FROM users r
+                    ) r ON r.id = warnings.resolved_by
+                    "#;
+
+        let rows: Vec<WarningUser> = match user_id {
             Some(id) => {
-                sqlx::query_as(
-                    r#"
-                    SELECT * FROM warnings WHERE user_id = $1
-                    LIMIT $2 OFFSET $3
-                    "#,
-                )
+                sqlx::query_as(&format!(
+                    r#"{} WHERE user_id = $1 LIMIT $2 OFFSET $3"#,
+                    query
+                ))
                 .bind(id)
                 .bind(CONFIG.page_limit)
                 .bind(CONFIG.page_limit * page)
@@ -70,16 +96,11 @@ impl Warning {
                 .await?
             }
             None => {
-                sqlx::query_as(
-                    r#"
-                    SELECT * FROM warnings
-                    LIMIT $1 OFFSET $2
-                    "#,
-                )
-                .bind(CONFIG.page_limit)
-                .bind(CONFIG.page_limit * page)
-                .fetch_all(pool)
-                .await?
+                sqlx::query_as(&format!(r#"{} LIMIT $1 OFFSET $2"#, query))
+                    .bind(CONFIG.page_limit)
+                    .bind(CONFIG.page_limit * page)
+                    .fetch_all(pool)
+                    .await?
             }
         };
 
@@ -133,14 +154,24 @@ impl Warning {
     }
 
     /// Filter warnings. Pass a `WarningFilter` argument
-    pub async fn filter(page: i64, args: WarningFilter) -> Result<Vec<Warning>, AppError> {
+    pub async fn filter(page: i64, args: WarningFilter) -> Result<Vec<WarningUser>, AppError> {
         let pool = unsafe { get_client() };
 
         let query = r#"
-                    SELECT * FROM warnings WHERE model_id = $1
+                    SELECT
+                        warnings.*,
+                        json_build_object('id', users.id, 'name', users.name, 'email', users.email, 'username', users.username, 'is_staff', users.is_staff, 'avatar', users.avatar) as user,
+                        coalesce(r.data, '{}'::json) as resolved
+                    FROM warnings
+                    JOIN users ON users.id = warnings.user_id
+                    LEFT JOIN (
+                        SELECT id, json_build_object('id', r.id, 'name', r.name, 'email', r.email, 'username', r.username, 'is_staff', r.is_staff, 'avatar', r.avatar) as data
+                        FROM users r
+                    ) r ON r.id = warnings.resolved_by
+                    WHERE model_id = $1
                     "#;
 
-        let rows: Vec<Warning> = match args.user_id {
+        let rows: Vec<WarningUser> = match args.user_id {
             Some(id) => {
                 sqlx::query_as(&format!(r#"{} AND user_id = $2 LIMIT $3 OFFSET $4"#, query))
                     .bind(args.model_id)
