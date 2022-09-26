@@ -23,6 +23,18 @@ pub struct WarningCreate {
     pub note: String,
 }
 
+/// Payload used for warning filtering
+#[derive(Deserialize)]
+pub struct WarningFilterPayload {
+    pub model_id: i32,
+}
+
+/// Struct used as argument for filtering by the backend
+pub struct WarningFilter {
+    pub model_id: i32,
+    pub user_id: Option<i32>,
+}
+
 impl Warning {
     /// Create a warning means create an object which has an `user_id` (creator of the warning), a
     /// `model_id` (suspect model) and a `note`
@@ -118,5 +130,64 @@ impl Warning {
         .await?;
 
         Ok(rec)
+    }
+
+    /// Filter warnings. Pass a `WarningFilter` argument
+    pub async fn filter(page: i64, args: WarningFilter) -> Result<Vec<Warning>, AppError> {
+        let pool = unsafe { get_client() };
+
+        let query = r#"
+                    SELECT * FROM warnings WHERE model_id = $1
+                    "#;
+
+        let rows: Vec<Warning> = match args.user_id {
+            Some(id) => {
+                sqlx::query_as(&format!(r#"{} AND user_id = $2 LIMIT $3 OFFSET $4"#, query))
+                    .bind(args.model_id)
+                    .bind(id)
+                    .bind(CONFIG.page_limit)
+                    .bind(CONFIG.page_limit * page)
+                    .fetch_all(pool)
+                    .await?
+            }
+            None => {
+                sqlx::query_as(&format!(r#"{} LIMIT $2 OFFSET $3"#, query))
+                    .bind(args.model_id)
+                    .bind(CONFIG.page_limit)
+                    .bind(CONFIG.page_limit * page)
+                    .fetch_all(pool)
+                    .await?
+            }
+        };
+
+        Ok(rows)
+    }
+
+    /// Return the number of filtered warnings.
+    pub async fn count_by_model_id(args: WarningFilter) -> Result<i64, AppError> {
+        let pool = unsafe { get_client() };
+
+        let query = r#"
+                    SELECT COUNT(id) as count FROM warnings WHERE model_id = $1
+                    "#;
+
+        let cursor = match args.user_id {
+            Some(id) => {
+                sqlx::query(&format!(r#"{} AND user_id = $2"#, query))
+                    .bind(args.model_id)
+                    .bind(id)
+                    .fetch_one(pool)
+                    .await?
+            }
+            None => {
+                sqlx::query(&format!(r#"{}"#, query))
+                    .bind(args.model_id)
+                    .fetch_one(pool)
+                    .await?
+            }
+        };
+
+        let count: i64 = cursor.try_get(0).unwrap();
+        Ok(count)
     }
 }

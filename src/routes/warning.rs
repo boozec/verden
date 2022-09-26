@@ -4,23 +4,22 @@ use crate::{
         auth::Claims,
         model::Model,
         user::User,
-        warning::{Warning, WarningCreate},
+        warning::{Warning, WarningCreate, WarningFilter, WarningFilterPayload},
     },
     pagination::{Pagination, WarningPagination},
     routes::JsonCreate,
 };
-use axum::{extract::Query, routing::get, Json, Router};
-use serde::Serialize;
+use axum::{
+    extract::Query,
+    routing::{get, post},
+    Json, Router,
+};
 
 /// Create routes for `/v1/warnings/` namespace
 pub fn create_route() -> Router {
-    Router::new().route("/", get(list_warnings).post(create_warning))
-}
-
-#[derive(Serialize)]
-struct WarningPagination {
-    count: i64,
-    results: Vec<Warning>,
+    Router::new()
+        .route("/", get(list_warnings).post(create_warning))
+        .route("/filter", post(filter_warnings))
 }
 
 /// List warnings. A staffer can see everything.
@@ -61,4 +60,50 @@ async fn create_warning(
     let warning_new = Warning::create(warning).await?;
 
     Ok(JsonCreate(warning_new))
+}
+
+/// Apply a filter to warnings list
+async fn filter_warnings(
+    Json(payload): Json<WarningFilterPayload>,
+    pagination: Query<Pagination>,
+    claims: Claims,
+) -> Result<Json<WarningPagination>, AppError> {
+    let page = pagination.0.page.unwrap_or_default();
+
+    let user = User::find_by_id(claims.user_id).await?;
+
+    let (results, count) = match user.is_staff.unwrap() {
+        true => (
+            Warning::filter(
+                page,
+                WarningFilter {
+                    model_id: payload.model_id,
+                    user_id: None,
+                },
+            )
+            .await?,
+            Warning::count_by_model_id(WarningFilter {
+                model_id: payload.model_id,
+                user_id: None,
+            })
+            .await?,
+        ),
+        false => (
+            Warning::filter(
+                page,
+                WarningFilter {
+                    model_id: payload.model_id,
+                    user_id: Some(user.id),
+                },
+            )
+            .await?,
+            Warning::count_by_model_id(WarningFilter {
+                model_id: payload.model_id,
+                user_id: Some(user.id),
+            })
+            .await?,
+        ),
+    };
+
+    Ok(Json(WarningPagination { count, results }))
 }
