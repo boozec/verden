@@ -6,7 +6,7 @@ use crate::{
         user::User,
         warning::{Warning, WarningCreate},
     },
-    pagination::Pagination,
+    pagination::{Pagination, WarningPagination},
     routes::JsonCreate,
 };
 use axum::{extract::Query, routing::get, Json, Router};

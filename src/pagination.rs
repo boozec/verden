@@ -1,4 +1,4 @@
-use crate::models::{model::ModelUser, user::UserList};
+use crate::models::{model::ModelUser, user::UserList, warning::Warning};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
@@ -17,4 +17,10 @@ pub struct UserPagination {
 pub struct ModelPagination {
     pub count: i64,
     pub results: Vec<ModelUser>,
+}
+
+#[derive(Serialize)]
+pub struct WarningPagination {
+    pub count: i64,
+    pub results: Vec<Warning>,
 }
