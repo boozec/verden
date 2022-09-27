@@ -32,6 +32,14 @@ async fn main() {
     let app = create_app().await;
 
     let host = &CONFIG.allowed_host;
+
+    match CONFIG.set_sentry_guard() {
+        Some(_) => {}
+        None => {
+            tracing::error!("Sentry not configured.");
+        }
+    };
+
     let addr = match host.parse::<SocketAddr>() {
         Ok(addr) => addr,
         Err(_) => match host.to_socket_addrs() {
