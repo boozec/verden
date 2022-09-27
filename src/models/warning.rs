@@ -109,7 +109,7 @@ impl Warning {
         let rows: Vec<WarningUser> = match user_id {
             Some(id) => {
                 sqlx::query_as(&format!(
-                    r#"{} WHERE user_id = $1 LIMIT $2 OFFSET $3"#,
+                    r#"{} WHERE user_id = $1 ORDER BY id DESC LIMIT $2 OFFSET $3"#,
                     query
                 ))
                 .bind(id)
@@ -119,7 +119,7 @@ impl Warning {
                 .await?
             }
             None => {
-                sqlx::query_as(&format!(r#"{} LIMIT $1 OFFSET $2"#, query))
+                sqlx::query_as(&format!(r#"{} LIMIT $1 ORDER BY id DESC OFFSET $2"#, query))
                     .bind(CONFIG.page_limit)
                     .bind(CONFIG.page_limit * page)
                     .fetch_all(pool)
@@ -221,16 +221,19 @@ impl Warning {
 
         let rows: Vec<WarningUser> = match args.user_id {
             Some(id) => {
-                sqlx::query_as(&format!(r#"{} AND user_id = $2 LIMIT $3 OFFSET $4"#, query))
-                    .bind(args.model_id)
-                    .bind(id)
-                    .bind(CONFIG.page_limit)
-                    .bind(CONFIG.page_limit * page)
-                    .fetch_all(pool)
-                    .await?
+                sqlx::query_as(&format!(
+                    r#"{} AND user_id = $2 ORDER BY id DESC LIMIT $3 OFFSET $4"#,
+                    query
+                ))
+                .bind(args.model_id)
+                .bind(id)
+                .bind(CONFIG.page_limit)
+                .bind(CONFIG.page_limit * page)
+                .fetch_all(pool)
+                .await?
             }
             None => {
-                sqlx::query_as(&format!(r#"{} LIMIT $2 OFFSET $3"#, query))
+                sqlx::query_as(&format!(r#"{} LIMIT $2 ORDER BY id DESC OFFSET $3"#, query))
                     .bind(args.model_id)
                     .bind(CONFIG.page_limit)
                     .bind(CONFIG.page_limit * page)
