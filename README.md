@@ -8,6 +8,7 @@ Configuration to set up before starting:
 
 1. Create a PostgreSQL database.
 2. Generate a good secret string for JWT.
+3. [ Optional ] Create a Sentry project
 
 Variables with values as example:
 
@@ -19,6 +20,7 @@ SAVE_FILE_BASE_PATH="./uploads"
 UPLOADS_ENDPOINT="/uploads"
 RUST_LOG=verden=debug,tower_http=debug
 ALLOWED_HOST=localhost:3000
+SENTRY_DSN=.... # Optional
 ```
 
 # Deploy
@@ -52,6 +54,7 @@ but, if you define the environment variabile, it will use the one you defined on
    dokku config:set verden-api UPLOADS_ENDPOINT=/uploads
    dokku config:set verden-api RUST_LOG=verden=debug,tower_http=debug
    dokku config:set verdena-pi ALLOWED_HOST=0.0.0.0:9090
+   dokku config:set verdena-pi SENTRY_DSN=https://example@example.ingest.sentry.io/42
    ```
 5. Fix ports for HTTP
    ```
