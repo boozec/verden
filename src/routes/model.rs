@@ -138,6 +138,8 @@ async fn upload_model_file(
         }
     };
 
+    let user = User::find_by_id(claims.user_id).await?;
+
     if !(model.author_id() == user.id || user.is_staff.unwrap()) {
         return Err(AppError::Unauthorized);
     }
