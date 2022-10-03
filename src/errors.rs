@@ -59,6 +59,7 @@ impl IntoResponse for AppError {
 impl From<sqlx::Error> for AppError {
     fn from(error: sqlx::Error) -> AppError {
         tracing::error!("{:?}", error);
+        sentry::capture_error(&error);
         AppError::Database
     }
 }
