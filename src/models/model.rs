@@ -54,6 +54,7 @@ pub struct ModelUser {
     updated: NaiveDateTime,
     author: Option<JsonValue>,
     uploads: Option<JsonValue>,
+    likes: Option<JsonValue>,
 }
 
 #[derive(Deserialize, Serialize, sqlx::FromRow)]
@@ -160,10 +161,12 @@ impl Model {
                 SELECT
                     models.*,
                     json_build_object('id', users.id, 'name', users.name, 'email', users.email, 'username', users.username, 'is_staff', users.is_staff, 'avatar', users.avatar) as author,
-                    json_agg(uploads.*) filter (where uploads.* is not null) as uploads
+                    json_agg(uploads.*) filter (where uploads.* is not null) as uploads,
+                    json_agg(likes.*) filter (where likes.* is not null) as likes
                 FROM models
                 JOIN users ON users.id = models.author_id
                 LEFT JOIN uploads ON uploads.model_id = models.id
+                LEFT JOIN likes ON likes.model_id = models.id
                 WHERE models.id = $1
                 GROUP BY models.id, users.id
             "#)
@@ -182,10 +185,12 @@ impl Model {
             SELECT
                 models.*,
                 json_build_object('id', users.id, 'name', users.name, 'email', users.email, 'username', users.username, 'is_staff', users.is_staff, 'avatar', users.avatar) as author,
-                json_agg(uploads.*) filter (where uploads.* is not null) as uploads
+                json_agg(uploads.*) filter (where uploads.* is not null) as uploads,
+                json_agg(likes.*) filter (where likes.* is not null) as likes
             FROM models
             JOIN users ON users.id = models.author_id
             LEFT JOIN uploads ON uploads.model_id = models.id
+            LEFT JOIN likes ON likes.model_id = models.id
             GROUP BY models.id, users.id
             ORDER BY id DESC
             LIMIT $1 OFFSET $2
@@ -206,10 +211,12 @@ impl Model {
             SELECT
                 models.*,
                 json_build_object('id', users.id, 'name', users.name, 'email', users.email, 'username', users.username, 'is_staff', users.is_staff, 'avatar', users.avatar) as author,
-                json_agg(uploads.*) filter (where uploads.* is not null) as uploads
+                json_agg(uploads.*) filter (where uploads.* is not null) as uploads,
+                json_agg(likes.*) filter (where likes.* is not null) as likes
             FROM models
             JOIN users ON users.id = models.author_id
             LEFT JOIN uploads ON uploads.model_id = models.id
+            LEFT JOIN likes ON likes.model_id = models.id
             WHERE author_id = $1
             GROUP BY models.id, users.id
             ORDER BY id DESC
