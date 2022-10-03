@@ -3,6 +3,7 @@ use crate::{
     files::{delete_upload, upload},
     models::{
         auth::Claims,
+        likes::Like,
         model::{Model, ModelCreate, ModelUpload, ModelUser},
         user::User,
     },
@@ -21,6 +22,7 @@ pub fn create_route() -> Router {
     Router::new()
         .route("/", get(list_models).post(create_model))
         .route("/:id", get(get_model).delete(delete_model).put(edit_model))
+        .route("/:id/like", post(add_like).delete(delete_like))
         .route("/:id/upload", post(upload_model_file))
         .route("/:id/upload/:uid", delete(delete_model_file))
 }
@@ -205,5 +207,47 @@ async fn delete_model_file(
             Ok(StatusCode::NO_CONTENT)
         }
         Err(e) => Err(e),
+    }
+}
+
+/// Assign a like to a model from the Authorization user
+async fn add_like(claims: Claims, Path(model_id): Path<i32>) -> Result<StatusCode, AppError> {
+    let model = match Model::find_by_id(model_id).await {
+        Ok(model) => model,
+        Err(_) => {
+            return Err(AppError::NotFound("Model not found".to_string()));
+        }
+    };
+
+    let user = User::find_by_id(claims.user_id).await?;
+
+    let like = Like::new(user.id, model.id);
+
+    match like.save().await {
+        Ok(_) => Ok(StatusCode::CREATED),
+        Err(e) => {
+            return Err(e);
+        }
+    }
+}
+
+/// Remove a like from a model and an Authorization user
+async fn delete_like(claims: Claims, Path(model_id): Path<i32>) -> Result<StatusCode, AppError> {
+    let model = match Model::find_by_id(model_id).await {
+        Ok(model) => model,
+        Err(_) => {
+            return Err(AppError::NotFound("Model not found".to_string()));
+        }
+    };
+
+    let user = User::find_by_id(claims.user_id).await?;
+
+    let like = Like::new(user.id, model.id);
+
+    match like.remove().await {
+        Ok(_) => Ok(StatusCode::NO_CONTENT),
+        Err(e) => {
+            return Err(e);
+        }
     }
 }
