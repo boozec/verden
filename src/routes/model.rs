@@ -4,7 +4,7 @@ use crate::{
     models::{
         auth::Claims,
         likes::Like,
-        model::{Model, ModelCreate, ModelUpload, ModelUser},
+        model::{Model, ModelCreate, ModelFilter, ModelUpload, ModelUser},
         user::User,
     },
     pagination::{ModelPagination, Pagination},
@@ -21,6 +21,7 @@ use axum::{
 pub fn create_route() -> Router {
     Router::new()
         .route("/", get(list_models).post(create_model))
+        .route("/filter", post(filter_models))
         .route("/:id", get(get_model).delete(delete_model).put(edit_model))
         .route("/:id/like", post(add_like).delete(delete_like))
         .route("/:id/upload", post(upload_model_file))
@@ -250,4 +251,17 @@ async fn delete_like(claims: Claims, Path(model_id): Path<i32>) -> Result<Status
             return Err(e);
         }
     }
+}
+
+/// Filter models
+async fn filter_models(
+    pagination: Query<Pagination>,
+    Json(payload): Json<ModelFilter>,
+) -> Result<Json<ModelPagination>, AppError> {
+    let page = pagination.0.page.unwrap_or_default();
+
+    let results = Model::filter(page, payload.q.clone()).await?;
+    let count = Model::count_filter(payload.q).await?;
+
+    Ok(Json(ModelPagination { count, results }))
 }
