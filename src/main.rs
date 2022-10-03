@@ -8,7 +8,7 @@ mod models;
 mod pagination;
 mod routes;
 
-use crate::config::CONFIG;
+use crate::config::{CONFIG, SENTRY};
 use axum::{
     handler::Handler,
     http::{header, Method, Request},
@@ -32,13 +32,6 @@ async fn main() {
     let app = create_app().await;
 
     let host = &CONFIG.allowed_host;
-
-    match CONFIG.set_sentry_guard() {
-        Some(_) => {}
-        None => {
-            tracing::error!("Sentry not configured.");
-        }
-    };
 
     let addr = match host.parse::<SocketAddr>() {
         Ok(addr) => addr,

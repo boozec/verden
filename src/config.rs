@@ -12,8 +12,9 @@ pub struct Configuration {
     pub database_url: String,
     pub jwt_secret: String,
     pub allowed_host: String,
-    pub sentry_dsn: Option<String>,
 }
+
+pub struct Sentry(pub ClientInitGuard);
 
 impl Configuration {
     pub fn new() -> Result<Self, ConfigError> {
@@ -21,21 +22,28 @@ impl Configuration {
         cfg.merge(config::Environment::default())?;
         cfg.try_into()
     }
+}
 
-    pub fn set_sentry_guard(&self) -> Option<ClientInitGuard> {
-        match &self.sentry_dsn {
-            Some(dsn) => Some(sentry::init((
-                dsn.clone(),
-                sentry::ClientOptions {
-                    release: sentry::release_name!(),
-                    ..Default::default()
-                },
-            ))),
-            None => None,
+impl Sentry {
+    pub fn new() -> Result<Self, std::env::VarError> {
+        match std::env::var("SENTRY_DSN") {
+            Ok(dsn) => {
+                let guard = sentry::init((
+                    dsn.clone(),
+                    sentry::ClientOptions {
+                        release: sentry::release_name!(),
+                        ..Default::default()
+                    },
+                ));
+
+                Ok(Self(guard))
+            }
+            Err(e) => Err(e),
         }
     }
 }
 
 lazy_static! {
     pub static ref CONFIG: Configuration = Configuration::new().expect("Config can be loaded");
+    pub static ref SENTRY: Sentry = Sentry::new().expect("Sentry not configured.");
 }
