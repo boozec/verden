@@ -43,6 +43,7 @@ async fn main() {
         },
     };
     tracing::info!("Listening on {}", addr);
+    tracing::info!("[Sentry] Guard enabled: {}", SENTRY.0.is_enabled());
 
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
