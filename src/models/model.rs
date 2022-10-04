@@ -165,17 +165,29 @@ impl Model {
 
         let rec: ModelUser = sqlx::query_as(
             r#"
-                SELECT
-                    models.*,
-                    json_build_object('id', users.id, 'name', users.name, 'email', users.email, 'username', users.username, 'is_staff', users.is_staff, 'avatar', users.avatar) as author,
-                    json_agg(uploads.*) filter (where uploads.* is not null) as uploads,
-                    json_agg(likes.*) filter (where likes.* is not null) as likes
+                WITH model_uploads AS (
+                    SELECT models.id, json_agg(uploads.*) filter(WHERE uploads.* IS NOT NULL) AS uploads
+                    FROM models
+                    LEFT JOIN uploads ON uploads.model_id = models.id
+                    GROUP BY models.id
+                ),
+                model_likes AS (
+                    SELECT models.id, json_agg(likes.*) filter(WHERE likes.* IS NOT NULL) AS likes
+                    FROM models
+                    LEFT JOIN likes ON likes.model_id = models.id
+                    GROUP BY models.id
+                ),
+                model_author AS (
+                    SELECT models.id, json_build_object('id', users.id, 'name', users.name, 'email', users.email, 'username', users.username, 'is_staff', users.is_staff, 'avatar', users.avatar) as author
+                    FROM models
+                    JOIN users ON users.id = models.author_id
+                )
+                SELECT models.*, author, uploads, likes
                 FROM models
-                JOIN users ON users.id = models.author_id
-                LEFT JOIN uploads ON uploads.model_id = models.id
-                LEFT JOIN likes ON likes.model_id = models.id
+                INNER JOIN model_author using (id)
+                INNER JOIN model_uploads using (id)
+                INNER JOIN model_likes using (id)
                 WHERE models.id = $1
-                GROUP BY models.id, users.id
             "#)
         .bind(model_id)
         .fetch_one(pool)
@@ -189,16 +201,28 @@ impl Model {
         let pool = unsafe { get_client() };
         let rows: Vec<ModelUser> = sqlx::query_as(
             r#"
-            SELECT
-                models.*,
-                json_build_object('id', users.id, 'name', users.name, 'email', users.email, 'username', users.username, 'is_staff', users.is_staff, 'avatar', users.avatar) as author,
-                json_agg(uploads.*) filter (where uploads.* is not null) as uploads,
-                json_agg(likes.*) filter (where likes.* is not null) as likes
+            WITH model_uploads AS (
+                SELECT models.id, json_agg(uploads.*) filter(WHERE uploads.* IS NOT NULL) AS uploads
+                FROM models
+                LEFT JOIN uploads ON uploads.model_id = models.id
+                GROUP BY models.id
+            ),
+            model_likes AS (
+                SELECT models.id, json_agg(likes.*) filter(WHERE likes.* IS NOT NULL) AS likes
+                FROM models
+                LEFT JOIN likes ON likes.model_id = models.id
+                GROUP BY models.id
+            ),
+            model_author AS (
+                SELECT models.id, json_build_object('id', users.id, 'name', users.name, 'email', users.email, 'username', users.username, 'is_staff', users.is_staff, 'avatar', users.avatar) as author
+                FROM models
+                JOIN users ON users.id = models.author_id
+            )
+            SELECT models.*, author, uploads, likes
             FROM models
-            JOIN users ON users.id = models.author_id
-            LEFT JOIN uploads ON uploads.model_id = models.id
-            LEFT JOIN likes ON likes.model_id = models.id
-            GROUP BY models.id, users.id
+            INNER JOIN model_author using (id)
+            INNER JOIN model_uploads using (id)
+            INNER JOIN model_likes using (id)
             ORDER BY id DESC
             LIMIT $1 OFFSET $2
             "#)
@@ -215,17 +239,29 @@ impl Model {
         let pool = unsafe { get_client() };
         let rows: Vec<ModelUser> = sqlx::query_as(
             r#"
-            SELECT
-                models.*,
-                json_build_object('id', users.id, 'name', users.name, 'email', users.email, 'username', users.username, 'is_staff', users.is_staff, 'avatar', users.avatar) as author,
-                json_agg(uploads.*) filter (where uploads.* is not null) as uploads,
-                json_agg(likes.*) filter (where likes.* is not null) as likes
+            WITH model_uploads AS (
+                SELECT models.id, json_agg(uploads.*) filter(WHERE uploads.* IS NOT NULL) AS uploads
+                FROM models
+                LEFT JOIN uploads ON uploads.model_id = models.id
+                GROUP BY models.id
+            ),
+            model_likes AS (
+                SELECT models.id, json_agg(likes.*) filter(WHERE likes.* IS NOT NULL) AS likes
+                FROM models
+                LEFT JOIN likes ON likes.model_id = models.id
+                GROUP BY models.id
+            ),
+            model_author AS (
+                SELECT models.id, json_build_object('id', users.id, 'name', users.name, 'email', users.email, 'username', users.username, 'is_staff', users.is_staff, 'avatar', users.avatar) as author
+                FROM models
+                JOIN users ON users.id = models.author_id
+            )
+            SELECT models.*, author, uploads, likes
             FROM models
-            JOIN users ON users.id = models.author_id
-            LEFT JOIN uploads ON uploads.model_id = models.id
-            LEFT JOIN likes ON likes.model_id = models.id
+            INNER JOIN model_author using (id)
+            INNER JOIN model_uploads using (id)
+            INNER JOIN model_likes using (id)
             WHERE models.name ILIKE $1 OR description ILIKE $1 OR printer ILIKE $1 OR material ILIKE $1
-            GROUP BY models.id, users.id
             ORDER BY id DESC
             LIMIT $2 OFFSET $3
             "#)
@@ -243,17 +279,28 @@ impl Model {
         let pool = unsafe { get_client() };
         let rows: Vec<ModelUser> = sqlx::query_as(
             r#"
-            SELECT
-                models.*,
-                json_build_object('id', users.id, 'name', users.name, 'email', users.email, 'username', users.username, 'is_staff', users.is_staff, 'avatar', users.avatar) as author,
-                json_agg(uploads.*) filter (where uploads.* is not null) as uploads,
-                json_agg(likes.*) filter (where likes.* is not null) as likes
+            WITH model_uploads AS (
+                SELECT models.id, json_agg(uploads.*) filter(WHERE uploads.* IS NOT NULL) AS uploads
+                FROM models
+                LEFT JOIN uploads ON uploads.model_id = models.id
+                GROUP BY models.id
+            ),
+            model_likes AS (
+                SELECT models.id, json_agg(likes.*) filter(WHERE likes.* IS NOT NULL) AS likes
+                FROM models
+                LEFT JOIN likes ON likes.model_id = models.id
+                GROUP BY models.id
+            ),
+            model_author AS (
+                SELECT models.id, json_build_object('id', users.id, 'name', users.name, 'email', users.email, 'username', users.username, 'is_staff', users.is_staff, 'avatar', users.avatar) as author
+                FROM models
+                JOIN users ON users.id = models.author_id
+            )
+            SELECT models.*, author, uploads, likes
             FROM models
-            JOIN users ON users.id = models.author_id
-            LEFT JOIN uploads ON uploads.model_id = models.id
-            LEFT JOIN likes ON likes.model_id = models.id
-            WHERE author_id = $1
-            GROUP BY models.id, users.id
+            INNER JOIN model_author using (id)
+            INNER JOIN model_uploads using (id)
+            INNER JOIN model_likes using (id)
             ORDER BY id DESC
             LIMIT $2 OFFSET $3
             "#)
