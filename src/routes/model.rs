@@ -77,7 +77,7 @@ async fn delete_model(claims: Claims, Path(model_id): Path<i32>) -> Result<Statu
 
     let user = User::find_by_id(claims.user_id).await?;
 
-    let uploads: Vec<String> = model.list_upload_filepaths().await.unwrap();
+    let uploads: Vec<String> = model.list_upload_filepaths().await.unwrap_or_default();
 
     if !(model.author_id() == user.id || user.is_staff.unwrap()) {
         return Err(AppError::Unauthorized);
