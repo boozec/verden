@@ -301,6 +301,7 @@ impl Model {
             INNER JOIN model_author using (id)
             INNER JOIN model_uploads using (id)
             INNER JOIN model_likes using (id)
+            WHERE models.author_id = $1
             ORDER BY id DESC
             LIMIT $2 OFFSET $3
             "#)
