@@ -130,6 +130,7 @@ impl User {
         let pool = unsafe { get_client() };
         let rows: Vec<UserList> = sqlx::query_as(
             r#"SELECT id, name, email, username, is_staff, avatar FROM users
+            ORDER BY id DESC
             LIMIT $1 OFFSET $2
             "#,
         )
