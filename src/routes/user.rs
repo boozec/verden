@@ -46,7 +46,7 @@ async fn get_me(claims: Claims) -> Result<Json<UserList>, AppError> {
 /// Edit the avatar of the user linked to the claims
 async fn edit_my_avatar(
     claims: Claims,
-    ContentLengthLimit(multipart): ContentLengthLimit<Multipart, { 1024 * 1024 }>,
+    ContentLengthLimit(multipart): ContentLengthLimit<Multipart, { 1024 * 1024 * 5 }>,
 ) -> Result<Json<UserList>, AppError> {
     let mut user = match User::find_by_id(claims.user_id).await {
         Ok(user) => user,

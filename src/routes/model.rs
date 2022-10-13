@@ -132,7 +132,7 @@ async fn edit_model(
 async fn upload_model_file(
     claims: Claims,
     Path(model_id): Path<i32>,
-    ContentLengthLimit(multipart): ContentLengthLimit<Multipart, { 1024 * 1024 }>,
+    ContentLengthLimit(multipart): ContentLengthLimit<Multipart, { 1024 * 1024 * 40 }>,
 ) -> Result<Json<ModelUpload>, AppError> {
     let model = match Model::find_by_id(model_id).await {
         Ok(model) => model,
