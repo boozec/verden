@@ -64,12 +64,15 @@ pub struct WarningEdit {
 /// Payload used for warning filtering
 #[derive(Deserialize)]
 pub struct WarningFilterPayload {
-    pub model_id: i32,
+    pub model_id: Option<i32>,
+    pub resolved_by: Option<i32>,
 }
 
 /// Struct used as argument for filtering by the backend
+#[derive(Debug)]
 pub struct WarningFilter {
-    pub model_id: i32,
+    pub model_id: Option<i32>,
+    pub resolved_by: Option<i32>,
     pub user_id: Option<i32>,
 }
 
@@ -201,11 +204,12 @@ impl Warning {
         Ok(rec)
     }
 
-    /// Filter warnings. Pass a `WarningFilter` argument
+    /// Filter warnings. Pass a `WarningFilter` argument. You can filter only by model_id or (not
+    /// both) resolved by
     pub async fn filter(page: i64, args: WarningFilter) -> Result<Vec<WarningUser>, AppError> {
         let pool = unsafe { get_client() };
 
-        let query = r#"
+        let mut query = r#"
                     SELECT
                         warnings.*,
                         json_build_object('id', users.id, 'name', users.name, 'email', users.email, 'username', users.username, 'is_staff', users.is_staff, 'avatar', users.avatar) as user,
@@ -216,26 +220,62 @@ impl Warning {
                         SELECT id, json_build_object('id', r.id, 'name', r.name, 'email', r.email, 'username', r.username, 'is_staff', r.is_staff, 'avatar', r.avatar) as data
                         FROM users r
                     ) r ON r.id = warnings.resolved_by
-                    WHERE model_id = $1
-                    "#;
+                    "#.to_string();
+
+        if args.model_id.is_some() {
+            query += r#"WHERE model_id = $1"#;
+        } else {
+            match args.resolved_by {
+                Some(_) => {
+                    query += r#" WHERE warnings.resolved_by = $1"#;
+                }
+                None => {
+                    query += r#" WHERE warnings.resolved_by = NULL"#;
+                }
+            };
+        }
 
         let rows: Vec<WarningUser> = match args.user_id {
             Some(id) => {
-                sqlx::query_as(&format!(
-                    r#"{} AND user_id = $2 ORDER BY id DESC LIMIT $3 OFFSET $4"#,
-                    query
-                ))
-                .bind(args.model_id)
-                .bind(id)
-                .bind(CONFIG.page_limit)
-                .bind(CONFIG.page_limit * page)
-                .fetch_all(pool)
-                .await?
+                let q = if args.model_id.is_some() {
+                    query = format!(
+                        r#"{} AND user_id = $2 ORDER BY id DESC LIMIT $3 OFFSET $4"#,
+                        query
+                    );
+                    sqlx::query_as(&query).bind(args.model_id.unwrap())
+                } else if args.resolved_by.is_some() {
+                    query = format!(
+                        r#"{} AND user_id = $2 ORDER BY id DESC LIMIT $3 OFFSET $4"#,
+                        query
+                    );
+                    sqlx::query_as(&query).bind(args.resolved_by.unwrap())
+                } else {
+                    query = format!(
+                        r#"{} AND user_id = $1 ORDER BY id DESC LIMIT $2 OFFSET $3"#,
+                        query
+                    );
+                    sqlx::query_as(&query)
+                };
+
+                q.bind(id)
+                    .bind(CONFIG.page_limit)
+                    .bind(CONFIG.page_limit * page)
+                    .fetch_all(pool)
+                    .await?
             }
             None => {
-                sqlx::query_as(&format!(r#"{} ORDER BY id DESC LIMIT $2 OFFSET $3"#, query))
-                    .bind(args.model_id)
-                    .bind(CONFIG.page_limit)
+                let q = if args.model_id.is_some() {
+                    query = format!(r#"{} ORDER BY id DESC LIMIT $2 OFFSET $3"#, query);
+                    sqlx::query_as(&query).bind(args.model_id.unwrap())
+                } else if args.resolved_by.is_some() {
+                    query = format!(r#"{} ORDER BY id DESC LIMIT $2 OFFSET $3"#, query);
+                    sqlx::query_as(&query).bind(args.resolved_by.unwrap())
+                } else {
+                    query = format!(r#"{} ORDER BY id DESC LIMIT $1 OFFSET $2"#, query);
+                    sqlx::query_as(&query)
+                };
+
+                q.bind(CONFIG.page_limit)
                     .bind(CONFIG.page_limit * page)
                     .fetch_all(pool)
                     .await?

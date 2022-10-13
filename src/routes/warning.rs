@@ -103,12 +103,14 @@ async fn filter_warnings(
                 page,
                 WarningFilter {
                     model_id: payload.model_id,
+                    resolved_by: payload.resolved_by,
                     user_id: None,
                 },
             )
             .await?,
             Warning::count_by_model_id(WarningFilter {
                 model_id: payload.model_id,
+                resolved_by: payload.resolved_by,
                 user_id: None,
             })
             .await?,
@@ -118,12 +120,14 @@ async fn filter_warnings(
                 page,
                 WarningFilter {
                     model_id: payload.model_id,
+                    resolved_by: payload.resolved_by,
                     user_id: Some(user.id),
                 },
             )
             .await?,
             Warning::count_by_model_id(WarningFilter {
                 model_id: payload.model_id,
+                resolved_by: payload.resolved_by,
                 user_id: Some(user.id),
             })
             .await?,
