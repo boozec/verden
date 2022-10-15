@@ -230,7 +230,7 @@ impl Warning {
                     query += r#" WHERE warnings.resolved_by = $1"#;
                 }
                 None => {
-                    query += r#" WHERE warnings.resolved_by = NULL"#;
+                    query += r#" WHERE warnings.resolved_by IS NULL"#;
                 }
             };
         }
