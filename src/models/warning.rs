@@ -289,23 +289,49 @@ impl Warning {
     pub async fn count_by_model_id(args: WarningFilter) -> Result<i64, AppError> {
         let pool = unsafe { get_client() };
 
-        let query = r#"
-                    SELECT COUNT(id) as count FROM warnings WHERE model_id = $1
-                    "#;
+        let mut query = r#"
+            SELECT COUNT(id) as count FROM warnings
+            "#
+        .to_string();
+
+        if args.model_id.is_some() {
+            query += r#" WHERE model_id = $1"#;
+        } else {
+            match args.resolved_by {
+                Some(_) => {
+                    query += r#" WHERE warnings.resolved_by = $1"#;
+                }
+                None => {
+                    query += r#" WHERE warnings.resolved_by IS NULL"#;
+                }
+            };
+        }
 
         let cursor = match args.user_id {
             Some(id) => {
-                sqlx::query(&format!(r#"{} AND user_id = $2"#, query))
-                    .bind(args.model_id)
-                    .bind(id)
-                    .fetch_one(pool)
-                    .await?
+                let q = if args.model_id.is_some() {
+                    query = format!(r#"{} AND user_id = $2"#, query);
+                    sqlx::query(&query).bind(args.model_id.unwrap())
+                } else if args.resolved_by.is_some() {
+                    query = format!(r#"{} AND user_id = $2"#, query);
+                    sqlx::query(&query).bind(args.resolved_by.unwrap())
+                } else {
+                    query = format!(r#"{} AND user_id = $1"#, query);
+                    sqlx::query(&query)
+                };
+
+                q.bind(id).fetch_one(pool).await?
             }
             None => {
-                sqlx::query(&format!(r#"{}"#, query))
-                    .bind(args.model_id)
-                    .fetch_one(pool)
-                    .await?
+                let q = if args.model_id.is_some() {
+                    sqlx::query(&query).bind(args.model_id.unwrap())
+                } else if args.resolved_by.is_some() {
+                    sqlx::query(&query).bind(args.resolved_by.unwrap())
+                } else {
+                    sqlx::query(&query)
+                };
+
+                q.fetch_one(pool).await?
             }
         };
 
