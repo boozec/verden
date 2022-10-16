@@ -11,6 +11,7 @@ use crate::{
 };
 use axum::{
     extract::{Path, Query},
+    http::StatusCode,
     routing::{get, post, put},
     Json, Router,
 };
@@ -19,7 +20,7 @@ use axum::{
 pub fn create_route() -> Router {
     Router::new()
         .route("/", get(list_warnings).post(create_warning))
-        .route("/:id", put(edit_warning))
+        .route("/:id", put(edit_warning).delete(delete_warning))
         .route("/filter", post(filter_warnings))
 }
 
@@ -85,6 +86,24 @@ async fn edit_warning(
     warning.edit(user.id, payload).await?;
 
     Ok(Json(warning))
+}
+
+/// A staffer can delete a warning
+async fn delete_warning(
+    claims: Claims,
+    Path(warning_id): Path<i32>,
+) -> Result<StatusCode, AppError> {
+    let user = User::find_by_id(claims.user_id).await?;
+
+    if !user.is_staff.unwrap() {
+        return Err(AppError::Unauthorized);
+    }
+
+    if Warning::delete(warning_id).await.is_ok() {
+        Ok(StatusCode::NO_CONTENT)
+    } else {
+        Ok(StatusCode::BAD_REQUEST)
+    }
 }
 
 /// Apply a filter to warnings list

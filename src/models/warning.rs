@@ -93,6 +93,22 @@ impl Warning {
         }
     }
 
+    /// Delete a report
+    pub async fn delete(warning_id: i32) -> Result<(), AppError> {
+        let pool = unsafe { get_client() };
+
+        sqlx::query(
+            r#"
+            DELETE FROM warnings WHERE id = $1
+            "#,
+        )
+        .bind(warning_id)
+        .execute(pool)
+        .await?;
+
+        Ok(())
+    }
+
     /// List all warnings. A staffer can see all the warnings, a user cannot
     pub async fn list(page: i64, user_id: Option<i32>) -> Result<Vec<WarningUser>, AppError> {
         let pool = unsafe { get_client() };
