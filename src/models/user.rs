@@ -217,18 +217,20 @@ impl UserList {
         self.name = payload.name.clone();
         self.username = payload.username.clone();
         self.email = payload.email.clone();
+        self.is_staff = payload.is_staff;
 
         self.validate()
             .map_err(|error| AppError::BadRequest(error.to_string()))?;
 
         sqlx::query(
             r#"
-            UPDATE users SET name = $1, username = $2, email = $3 WHERE id = $4
+            UPDATE users SET name = $1, username = $2, email = $3, is_staff = $4 WHERE id = $5
             "#,
         )
         .bind(&payload.name)
         .bind(&payload.username)
         .bind(&payload.email)
+        .bind(payload.is_staff.unwrap_or_default())
         .bind(self.id)
         .execute(pool)
         .await?;
