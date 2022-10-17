@@ -59,7 +59,7 @@ pub struct WarningCreate {
 #[derive(Deserialize)]
 pub struct WarningEdit {
     pub admin_note: String,
-    pub resolved_by: Option<bool>,
+    pub resolved_by: Option<i32>,
 }
 
 /// Payload used for warning filtering
