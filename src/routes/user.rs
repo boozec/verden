@@ -9,7 +9,7 @@ use crate::{
 };
 use axum::{
     extract::{ContentLengthLimit, Multipart, Path, Query},
-    routing::{get, put},
+    routing::{delete, get, put},
     Json, Router,
 };
 
@@ -20,6 +20,7 @@ pub fn create_route() -> Router {
         .route("/me", get(get_me))
         .route("/me/avatar", put(edit_my_avatar).delete(delete_my_avatar))
         .route("/:id", get(get_user).put(edit_user))
+        .route("/:id/avatar", delete(delete_avatar))
         .route("/:id/models", get(get_user_models))
 }
 
@@ -74,6 +75,43 @@ async fn edit_my_avatar(
         }
         Err(e) => Err(e),
     }
+}
+
+/// A staffer can delete an user `id`'s avatar
+async fn delete_avatar(
+    Path(user_id): Path<i32>,
+    claims: Claims,
+) -> Result<Json<UserList>, AppError> {
+    let mut user = match User::find_by_id(user_id).await {
+        Ok(user) => user,
+        Err(_) => {
+            return Err(AppError::NotFound("User not found".to_string()));
+        }
+    };
+
+    // If the user of the access token is different than the user they want to edit, checks if the
+    // first user is an admin
+    if claims.user_id != user.id {
+        match User::find_by_id(claims.user_id).await {
+            Ok(user) => {
+                if !(user.is_staff.unwrap()) {
+                    return Err(AppError::Unauthorized);
+                }
+            }
+            Err(_) => {
+                return Err(AppError::NotFound("User not found".to_string()));
+            }
+        };
+    }
+
+    if user.avatar.is_some() {
+        let avatar_url = user.avatar.as_ref().unwrap();
+        delete_upload(avatar_url)?;
+    }
+
+    user.edit_avatar(None).await?;
+
+    Ok(Json(user))
 }
 
 /// Delete the avatar of the user linked to the claims
