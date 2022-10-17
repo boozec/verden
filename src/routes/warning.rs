@@ -12,7 +12,7 @@ use crate::{
 use axum::{
     extract::{Path, Query},
     http::StatusCode,
-    routing::{get, post, put},
+    routing::{get, post},
     Json, Router,
 };
 
@@ -20,7 +20,10 @@ use axum::{
 pub fn create_route() -> Router {
     Router::new()
         .route("/", get(list_warnings).post(create_warning))
-        .route("/:id", put(edit_warning).delete(delete_warning))
+        .route(
+            "/:id",
+            get(get_warning).put(edit_warning).delete(delete_warning),
+        )
         .route("/filter", post(filter_warnings))
 }
 
@@ -45,6 +48,23 @@ async fn list_warnings(
     };
 
     Ok(Json(WarningPagination { count, results }))
+}
+
+/// Get a warning with id = `model_id`
+async fn get_warning(
+    Path(warning_id): Path<i32>,
+    claims: Claims,
+) -> Result<Json<Warning>, AppError> {
+    let user = User::find_by_id(claims.user_id).await?;
+
+    if !(user.is_staff.unwrap()) {
+        return Err(AppError::Unauthorized);
+    }
+
+    match Warning::find_by_id(warning_id).await {
+        Ok(warning) => Ok(Json(warning.into())),
+        Err(_) => Err(AppError::NotFound("Warning not found".to_string())),
+    }
 }
 
 /// Create a warning. Checks Authorization token
