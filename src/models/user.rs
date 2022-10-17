@@ -31,6 +31,7 @@ pub struct UserEdit {
     pub name: String,
     pub email: String,
     pub username: String,
+    pub is_staff: Option<bool>,
 }
 
 /// Response used to print a user (or a users list)

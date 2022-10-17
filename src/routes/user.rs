@@ -142,10 +142,11 @@ async fn get_user(Path(user_id): Path<i32>) -> Result<Json<UserList>, AppError> 
 }
 
 /// Edit an user with id = `user_id`. Only staffers and owner of that account can perform this
-/// action
+/// action.
+/// Only staffers can update the user `is_staff` value
 async fn edit_user(
     Path(user_id): Path<i32>,
-    Json(payload): Json<UserEdit>,
+    Json(mut payload): Json<UserEdit>,
     claims: Claims,
 ) -> Result<Json<UserList>, AppError> {
     let mut user = match User::find_by_id(user_id).await {
@@ -166,6 +167,10 @@ async fn edit_user(
         if !(claimed.is_staff.unwrap()) {
             return Err(AppError::Unauthorized);
         }
+    }
+
+    if !claimed.is_staff.unwrap() && user.is_staff != payload.is_staff {
+        payload.is_staff = user.is_staff;
     }
 
     if user.email != payload.email && User::email_has_taken(&payload.email).await? {
