@@ -101,7 +101,11 @@ async fn edit_warning(
         return Err(AppError::Unauthorized);
     }
 
-    warning.edit(user.id, payload).await?;
+    if payload.resolved_by.is_none() || payload.resolved_by.unwrap() {
+        warning.edit(Some(user.id), payload).await?;
+    } else {
+        warning.edit(None, payload).await?;
+    }
 
     Ok(Json(warning))
 }

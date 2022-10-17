@@ -59,6 +59,7 @@ pub struct WarningCreate {
 #[derive(Deserialize)]
 pub struct WarningEdit {
     pub admin_note: String,
+    pub resolved_by: Option<bool>,
 }
 
 /// Payload used for warning filtering
@@ -355,8 +356,12 @@ impl Warning {
         Ok(count)
     }
 
-    /// Edit a warning
-    pub async fn edit(&mut self, resolver: i32, payload: WarningEdit) -> Result<(), AppError> {
+    /// Edit a warning. When `resolver` is None, it means a warning is no more resolved
+    pub async fn edit(
+        &mut self,
+        resolver: Option<i32>,
+        payload: WarningEdit,
+    ) -> Result<(), AppError> {
         let pool = unsafe { get_client() };
 
         let now = Local::now().naive_utc();
@@ -374,7 +379,7 @@ impl Warning {
         .await?;
 
         self.admin_note = payload.admin_note;
-        self.resolved_by = Some(resolver);
+        self.resolved_by = resolver;
         self.updated = now;
 
         Ok(())
