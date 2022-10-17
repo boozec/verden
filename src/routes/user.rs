@@ -155,19 +155,17 @@ async fn edit_user(
         }
     };
 
-    // If the user of the access token is different than the user they want to edit, checks if the
-    // first user is an admin
-    if claims.user_id != user.id {
-        match User::find_by_id(claims.user_id).await {
-            Ok(user) => {
-                if !(user.is_staff.unwrap()) {
-                    return Err(AppError::Unauthorized);
-                }
-            }
-            Err(_) => {
-                return Err(AppError::NotFound("User not found".to_string()));
-            }
-        };
+    let claimed = match User::find_by_id(claims.user_id).await {
+        Ok(user) => user,
+        Err(_) => {
+            return Err(AppError::NotFound("User not found".to_string()));
+        }
+    };
+
+    if user.id != claimed.id {
+        if !(claimed.is_staff.unwrap()) {
+            return Err(AppError::Unauthorized);
+        }
     }
 
     if user.email != payload.email && User::email_has_taken(&payload.email).await? {
