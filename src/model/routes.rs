@@ -1,14 +1,12 @@
 use crate::{
+    auth::models::Claims,
     errors::AppError,
     files::{delete_upload, upload},
-    models::{
-        auth::Claims,
-        likes::Like,
-        model::{Model, ModelCreate, ModelFilter, ModelUpload, ModelUser},
-        user::User,
-    },
+    likes::models::Like,
+    model::models::{Model, ModelCreate, ModelFilter, ModelUpload, ModelUser},
     pagination::{ModelPagination, Pagination},
     routes::JsonCreate,
+    user::models::User,
 };
 use axum::{
     extract::{ContentLengthLimit, Multipart, Path, Query},

@@ -1,9 +1,7 @@
 use crate::{
     errors::AppError,
-    models::{
-        auth::{AuthBody, Claims, LoginCredentials, SignUpForm},
-        user::User,
-    },
+    auth::models::{AuthBody, Claims, LoginCredentials, SignUpForm},
+    user::models::User,
     routes::JsonCreate,
 };
 use axum::{routing::post, Json, Router};

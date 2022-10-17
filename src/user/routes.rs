@@ -1,11 +1,9 @@
 use crate::{
+    auth::models::Claims,
     errors::AppError,
     files::{delete_upload, upload},
-    models::{
-        auth::Claims,
-        user::{User, UserEdit, UserList},
-    },
     pagination::{ModelPagination, Pagination, UserPagination},
+    user::models::{User, UserEdit, UserList},
 };
 use axum::{
     extract::{ContentLengthLimit, Multipart, Path, Query},

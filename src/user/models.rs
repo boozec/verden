@@ -2,7 +2,7 @@ use crate::{
     config::CONFIG,
     db::get_client,
     errors::AppError,
-    models::model::{Model, ModelUser},
+    model::models::{Model, ModelUser},
 };
 
 use serde::{Deserialize, Serialize};

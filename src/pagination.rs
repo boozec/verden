@@ -1,4 +1,6 @@
-use crate::models::{model::ModelUser, user::UserList, warning::WarningUser};
+use crate::model::models::ModelUser;
+use crate::user::models::UserList;
+use crate::warning::models::WarningUser;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]

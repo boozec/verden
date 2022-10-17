@@ -1,12 +1,16 @@
+mod auth;
 mod config;
 mod db;
 mod errors;
 mod files;
 mod json;
+mod likes;
 mod logger;
-mod models;
+mod model;
 mod pagination;
 mod routes;
+mod user;
+mod warning;
 
 use crate::config::{CONFIG, SENTRY};
 use axum::{
@@ -57,10 +61,10 @@ async fn create_app() -> Router {
     let _ = db::setup().await;
 
     let api_routes = Router::new()
-        .nest("/users", routes::user::create_route())
-        .nest("/auth", routes::auth::create_route())
-        .nest("/models", routes::model::create_route())
-        .nest("/warnings", routes::warning::create_route());
+        .nest("/users", user::routes::create_route())
+        .nest("/auth", auth::routes::create_route())
+        .nest("/models", model::routes::create_route())
+        .nest("/warnings", warning::routes::create_route());
 
     Router::new()
         .route(

@@ -1,8 +1,3 @@
-pub mod auth;
-pub mod model;
-pub mod user;
-pub mod warning;
-
 use crate::errors::AppError;
 use axum::{
     http::StatusCode,

@@ -1,13 +1,11 @@
 use crate::{
+    auth::models::Claims,
     errors::AppError,
-    models::{
-        auth::Claims,
-        model::Model,
-        user::User,
-        warning::{Warning, WarningCreate, WarningEdit, WarningFilter, WarningFilterPayload},
-    },
+    model::models::Model,
     pagination::{Pagination, WarningPagination},
     routes::JsonCreate,
+    user::models::User,
+    warning::models::*,
 };
 use axum::{
     extract::{Path, Query},
