@@ -1,4 +1,6 @@
-# Verden 🌐🎨
+<div align="center">
+# `Verden 🌐🎨`
+</div>
 
 This software is part of a project for the Web Programming course at UNICT.
 
