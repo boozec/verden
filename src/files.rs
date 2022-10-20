@@ -3,7 +3,7 @@ use axum::{
     extract::{Multipart, Path},
     http::header::{HeaderMap, HeaderName, HeaderValue},
 };
-use std::fs;
+use std::{fs, path};
 
 use rand::random;
 
@@ -29,19 +29,28 @@ pub async fn upload(
             .iter()
             .any(|&x| x.to_lowercase() == ext_name)
         {
-            let name = match filename {
+            let mut name = match filename {
                 Some(name) => name,
                 None => (random::<f32>() * 1000000000 as f32).to_string(),
             };
 
-            let save_filename = format!("{}/{}.{}", CONFIG.save_file_base_path, name, ext_name);
-            uploaded_file = format!("{}/{}.{}", CONFIG.uploads_endpoint, name, ext_name);
+            loop {
+                let save_filename = format!("{}/{}.{}", CONFIG.save_file_base_path, name, ext_name);
 
-            let data = file.bytes().await.unwrap();
+                if path::Path::exists(&path::Path::new(&save_filename)) {
+                    name = (random::<f32>() * 1000000000 as f32).to_string();
+                    continue;
+                }
 
-            tokio::fs::write(&save_filename, &data)
-                .await
-                .map_err(|err| err.to_string())?;
+                uploaded_file = format!("{}/{}.{}", CONFIG.uploads_endpoint, name, ext_name);
+
+                let data = file.bytes().await.unwrap();
+
+                tokio::fs::write(&save_filename, &data)
+                    .await
+                    .map_err(|err| err.to_string())?;
+                break;
+            }
         }
     }
 
